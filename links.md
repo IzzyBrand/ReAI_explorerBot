@@ -17,6 +17,7 @@ Part-based Matching with Bottom-up Region Proposals](https://arxiv.org/pdf/1501.
 to detect foreground objects in single images](http://openaccess.thecvf.com/content_ICCV_2017/papers/Croitoru_Unsupervised_Learning_From_ICCV_2017_paper.pdf)
  * [A New PID Neural Network Controller Design
 for Nonlinear Processes](https://arxiv.org/pdf/1512.07529.pdf)
+ * [Cognitive Mapping and Planning for Visual Navigation](https://arxiv.org/pdf/1702.03920.pdf)
 ### Videos
  * [Self-supervised Deep Reinforcement Learning with Generalized Computation Graphs for Robot Navigation](https://www.youtube.com/watch?v=vgiW0HlQWVE)
  * [Safe Visual Navigation via Deep Learning and Novelty Detection](https://www.youtube.com/watch?v=_-_ADiGWWiI)
