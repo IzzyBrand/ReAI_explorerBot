@@ -28,15 +28,23 @@ class Servo:
 class Driver:
 	def __init__(self, m1,m2):
 		self.servo = Servo([m1,m2])
+		self.mid = 1500
+		self.drive_m1 = self.mid
+		self.drive_m2 = self.mid
 
 	def move(self, speed, turn):
 		''' Move forward at `speed`, and rotate `turn`'''
-		drive_m1 = speed + turn
-		drive_m2 = speed - turn
-		self.servo.multi_write([drive_m1, drive_m2])
+		self.drive_m1 = self.mid - speed + turn
+		self.drive_m2 = self.mid + speed + turn
+		self.servo.multi_write([self.drive_m1, self.drive_m2])
 
 	def stop(self):
-		self.servo.center_all()
+		self.move(0,0)
+
+	def dfb(self,speed):
+		self.drive_m1 -= speed 
+		self.drive_m2 += speed
+		self.servo.multi_write([self.drive_m1, self.drive_m2])
 
 
 if __name__ == '__main__':
