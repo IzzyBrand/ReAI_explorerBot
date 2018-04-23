@@ -27,17 +27,23 @@ int main(){
 		if (handles[i]<=0) {
 			printf("Fuck\n");
 		}
+		set_scaling(handles[i],3);
 	}
 
-	int distance1, distance2, distance3;
-	for (int i=0; i < 4; i++) {
-		set_scaling(handles[i],1);	
-		distance1 = get_distance(handles[i]);
-		set_scaling(handles[i],2);	
-		distance2 = get_distance(handles[i]);
-		set_scaling(handles[i],3);	
-		distance3 = get_distance(handles[i]);
-		printf("%X:\t%d\t%d\t%d",addresses[i], distance1, distance2, distance3);
+	int distance1, distance2, distance3, distance4;
+	int distances[4];
+	while (1) {  
+		for (int i=0; i < 4; i++) {
+			distances[i] = get_distance(handles[i]);
+			// set_scaling(handles[i],1);	
+			// distance1 = get_distance(handles[i]);
+			// set_scaling(handles[i],2);	
+			// distance2 = get_distance(handles[i]);
+			// set_scaling(handles[i],3);	
+			// distance3 = get_distance(handles[i]);
+			// printf("%X:\t%d\t%d\t%d\n",addresses[i], distance1, distance2, distance3);
+		}
+		printf("%d\t%d\t%d\t%d\n", distances[0], distances[1], distances[2], distances[3]);
 	}
 
 	return 0;
