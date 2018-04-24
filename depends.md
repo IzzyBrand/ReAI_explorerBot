@@ -7,7 +7,6 @@
  * OpenCV
 
 ### Utilities 
----
 
 **ServoBlaster** controls the servos
 
@@ -17,7 +16,7 @@ cd PiBits/ServoBlaster/user
 sudo make install
 ```
 
-[WiringPi](http://wiringpi.com/download-and-install/) provides a C library for 
+[**WiringPi**](http://wiringpi.com/download-and-install/) provides a C library for 
 interfacing with GPIO, as well as nice commandline tools.
 
 ``` sudo apt-get install i2c-tools libi2c-dev ```
