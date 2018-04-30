@@ -1,11 +1,12 @@
 import picamera
 import picamera.array
 import numpy as np
-import pickle
-from drive import Driver
+import cPickle as pickle
 import signal
 import sys
 import time
+from request import request_action
+from drive import Driver
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self, filename=None):
@@ -83,7 +84,7 @@ if __name__ == '__main__':
     time.sleep(5)
     print('HERE WE GO')
     while True:
-        print(frame.data.shape, flow.data.shape)
+        print request_action(frame.data, flow.data, np.zeros(4), np.zeros(2))
         driver.stop()
 
 
