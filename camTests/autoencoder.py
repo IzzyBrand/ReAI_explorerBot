@@ -20,7 +20,6 @@ class DataManager():
                     raw_frame = pickle.load(f, encoding='latin1')/255. * 2 - 1.
                     bw_frame = np.sum(raw_frame,  axis=2)
                     small_frame = np.flipud(cv2.resize(bw_frame, self.hw))
-                    print(self.data.shape, np.expand_dims(small_frame, 0).shape)
                     self.data = np.append(self.data, np.expand_dims(small_frame,0), axis=0)
                 except EOFError:
                     break
@@ -84,7 +83,7 @@ class DataManager():
 # NEURAL NET STUFF
 ###############################################################################
 
-learning_rate = 2e-1
+learning_rate = 2e-200
 image_size = 600
 fc1_size = 200
 fc2_size = 64
@@ -121,11 +120,12 @@ if __name__ == '__main__':
     d.load_from_pkl('long_frame.pkl')
     # d.load_from_npy('youtubeFootage/car2.npy')
     # d.save_to_npy('youtubeFootage/car2.npy')
-    for i in range(2000):
+    for i in range(10000):
         batch = d.next_batch(batch_size).reshape([batch_size, image_size])
         sess.run(train, feed_dict={image: batch})
         l = sess.run(loss, feed_dict={image: batch})
-        print('\rBatch {}\t Loss: {}'.format(i,l), losses.append(l))
+        print('\rBatch {}\t Loss: {}'.format(i,l))
+        losses.append(l)
         # sys.exit()
 
     print('Final Loss:', losses[-1])
