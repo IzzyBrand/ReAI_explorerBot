@@ -3,27 +3,29 @@ import numpy as np
 import pickle
 from matplotlib import pyplot as plt
 import cv2
+import sys
 
 class DataManager():
     def __init__(self, filename=None):
-        self.hw = [20,30]
+        self.hw = (20,30)
         self.dim = self.hw[0] * self.hw[1]
         if filename is not None:
             self.load(filename)
 
     def load_from_pkl(self, filename, options = 'rb'):
-        self.data = np.zeros([0,self.hw[0], self.hw[1]])
+        self.data = np.zeros([0,self.hw[1], self.hw[0]])
         with open(filename, options) as f:
             while True: 
                 try:
-                    raw_frame = pickle.load(f)/255. * 2 - 1.
+                    raw_frame = pickle.load(f, encoding='latin1')/255. * 2 - 1.
                     bw_frame = np.sum(raw_frame,  axis=2)
                     small_frame = np.flipud(cv2.resize(bw_frame, self.hw))
+                    print(self.data.shape, np.expand_dims(small_frame, 0).shape)
                     self.data = np.append(self.data, np.expand_dims(small_frame,0), axis=0)
                 except EOFError:
                     break
 
-        print 'Loaded {} items'.format(self.data.shape[0])
+        print('Loaded {} items'.format(self.data.shape[0]))
         self.shuffle()
 
     def load_from_mp4(self, filename):
@@ -31,7 +33,7 @@ class DataManager():
         cap = cv2.VideoCapture(filename)
         # Check if camera opened successfully
         if (cap.isOpened()== False):  print("Error opening video stream or file")
-        else: print 'Reading from', filename
+        else: print('Reading from', filename)
         # Read until video is completed
         counter = 0
         while(cap.isOpened()):
@@ -51,12 +53,12 @@ class DataManager():
         # When everything done, release the video capture object
         cap.release()
 
-        print 'Loaded {} items'.format(self.data.shape[0])
+        print('Loaded {} items'.format(self.data.shape[0]))
         self.shuffle()
 
     def load_from_npy(self, filename):
         self.data = np.load(filename)
-        print 'Loaded {} items'.format(self.data.shape[0])
+        print('Loaded {} items'.format(self.data.shape[0]))
         self.shuffle()
 
     def save_to_npy(self, filename):
@@ -73,7 +75,7 @@ class DataManager():
             self.index += batch_size
             return batch
         else: 
-            print '\nOUT OF DATA AT. RESHUFFLE'
+            print('\nOUT OF DATA AT. RESHUFFLE')
             self.shuffle()
             return self.next_batch(batch_size)
 
@@ -109,22 +111,24 @@ loss = tf.reduce_mean(tf.pow((reconstruction - image)/image_size, 2))
 train = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
 
 if __name__ == '__main__':
+    print("hi")
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
+    print("setup session")
 
     losses = []
     d = DataManager()
-    # d.load_from_pkl('frame.pkl')
-    d.load_from_npy('youtubeFootage/car2.npy')
+    d.load_from_pkl('long_frame.pkl')
+    # d.load_from_npy('youtubeFootage/car2.npy')
     # d.save_to_npy('youtubeFootage/car2.npy')
     for i in range(2000):
         batch = d.next_batch(batch_size).reshape([batch_size, image_size])
         sess.run(train, feed_dict={image: batch})
         l = sess.run(loss, feed_dict={image: batch})
-        print '\rBatch {}\t Loss: {}'.format(i,l),
-        losses.append(l)
+        print('\rBatch {}\t Loss: {}'.format(i,l), losses.append(l))
+        # sys.exit()
 
-    print 'Final Loss:', losses[-1]
+    print('Final Loss:', losses[-1])
 
     ############## PLOT LOSS ##############
     plt.plot(losses)
