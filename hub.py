@@ -1,16 +1,20 @@
 import picamera
+import picamera.array
 import numpy as np
 import pickle
 from drive import Driver
-
+import signal
+import sys
+import time
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self, filename=None):
-        if filname is not None: self.file = open(filename, 'ab')
+        self.data = None
+        if filename is not None: self.file = open(filename, 'ab')
         else: self.file = None
 
     def analyse(self, array):
-        self.array = array
+        self.data = array
         if self.file is not None: pickle.dump(array, self.file)
 
     def close(self):
@@ -19,11 +23,12 @@ class FrameAnalyzer(picamera.array.PiRGBAnalysis):
 
 class FlowAnalyzer(picamera.array.PiMotionAnalysis):
     def setup(self, filename=None):
-        if filname is not None: self.file = open(filename, 'ab')
+        self.data = None
+        if filename is not None: self.file = open(filename, 'ab')
         else: self.file = None
 
     def analyse(self, array):
-        self.array = array
+        self.data = array
         if self.file is not None: pickle.dump(array, self.file)
 
     def close(self):
@@ -33,7 +38,9 @@ functions_to_call_on_exit = []
 
 # kill a bunch of things on exit
 def signal_handler(signal, frame):
-        for f in functions_to_call_on_exit: f()
+        for f in functions_to_call_on_exit:
+            print f
+            f()
         sys.exit(0)
 
 
@@ -46,16 +53,16 @@ if __name__ == '__main__':
 
     ############################# INIT THE DRIVER ############################# 
     driver = Driver(12,18)
-    function_to_call_on_exit.append(driver.stop)
+    functions_to_call_on_exit.append(driver.stop)
 
     ############################# INIT THE CAMERA ############################# 
     signal.signal(signal.SIGINT, signal_handler)
-    camera = picamera.PiCamera(framerate=90):
+    camera = picamera.PiCamera(framerate=90)
     camera.resolution = (width, height)
     frame = FrameAnalyzer(camera)
     flow = FlowAnalyzer(camera)
-    frame.setup('frame.pkl')
-    flow.setup('flow.pkl')
+    frame.setup()
+    flow.setup()
     camera.start_recording("/dev/null", format='h264', 
         splitter_port=1, motion_output=flow)
     camera.start_recording(frame, format='rgb', 
@@ -72,6 +79,9 @@ if __name__ == '__main__':
     # TODO: Something with tensorflow
 
     ############################## RUN THE TRAP ############################## 
+    print('Giving all the things a moment to boot up')
+    time.sleep(5)
+    print('HERE WE GO')
     while True:
         print(frame.data.shape, flow.data.shape)
         driver.stop()
