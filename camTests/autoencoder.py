@@ -13,12 +13,14 @@ class DataManager():
             self.load(filename)
 
     def load_from_pkl(self, filename, options = 'rb'):
+        print('Loading', filename)
         self.data = np.zeros([0,self.hw[1], self.hw[0]])
         with open(filename, options) as f:
             while True: 
                 try:
-                    raw_frame = pickle.load(f, encoding='latin1')/255. * 2 - 1.
-                    bw_frame = np.sum(raw_frame,  axis=2)
+                    # raw_frame = pickle.load(f, encoding='latin1')
+                    raw_frame = pickle.load(f)
+                    bw_frame = np.mean(raw_frame,  axis=2)
                     small_frame = np.flipud(cv2.resize(bw_frame, self.hw))
                     self.data = np.append(self.data, np.expand_dims(small_frame,0), axis=0)
                 except EOFError:
@@ -28,6 +30,7 @@ class DataManager():
         self.shuffle()
 
     def load_from_mp4(self, filename):
+        print('Loading', filename)
         self.data = np.zeros([0,self.hw[0], self.hw[1]])
         cap = cv2.VideoCapture(filename)
         # Check if camera opened successfully
@@ -42,11 +45,10 @@ class DataManager():
                 h = frame.shape[0]
                 w = int(h * 1.5)
                 border = int((frame.shape[1] - w)/2)
-                # print w,h,border
                 frame = frame[:,border:w+border,:]
-                frame = cv2.resize(frame, (30,20))
                 bw_frame = np.mean(frame, axis=2)
-                self.data = np.append(self.data, np.expand_dims(bw_frame,0), axis=0)
+                small_frame = cv2.resize(bw_frame, (30,20))
+                self.data = np.append(self.data, np.expand_dims(small_frame,0), axis=0)
             else: 
                 break
         # When everything done, release the video capture object
@@ -56,6 +58,7 @@ class DataManager():
         self.shuffle()
 
     def load_from_npy(self, filename):
+        print('Loading', filename)
         self.data = np.load(filename)
         print('Loaded {} items'.format(self.data.shape[0]))
         self.shuffle()
@@ -83,12 +86,12 @@ class DataManager():
 # NEURAL NET STUFF
 ###############################################################################
 
-learning_rate = 2e-200
+learning_rate = 0.5
 image_size = 600
 fc1_size = 200
 fc2_size = 64
 fc3_size = 200
-batch_size = 50
+batch_size = 25
 
 W1 = tf.Variable(tf.random_normal([image_size, fc1_size],stddev=.1))
 b1 = tf.Variable(tf.random_normal([fc1_size],stddev=.1))
@@ -117,16 +120,17 @@ if __name__ == '__main__':
 
     losses = []
     d = DataManager()
-    d.load_from_pkl('long_frame.pkl')
-    # d.load_from_npy('youtubeFootage/car2.npy')
-    # d.save_to_npy('youtubeFootage/car2.npy')
-    for i in range(10000):
+    # d.load_from_pkl('long_frame.pkl')
+    d.load_from_npy('youtubeFootage/car2.npy')
+
+    for i in range(1000):
         batch = d.next_batch(batch_size).reshape([batch_size, image_size])
         sess.run(train, feed_dict={image: batch})
         l = sess.run(loss, feed_dict={image: batch})
-        print('\rBatch {}\t Loss: {}'.format(i,l))
+        # print('\rBatch {}\t Loss: {}'.format(i,l))
+        print '\rBatch {}\t Loss: {}'.format(i,l),
         losses.append(l)
-        # sys.exit()
+
 
     print('Final Loss:', losses[-1])
 
