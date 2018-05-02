@@ -8,17 +8,10 @@ class DQN:
     def __init__(self):
         self.replay_memory = []
 
-        self.img_input = tf.placeholder(tf.float32,
-                [None, hp.IMG_HEIGHT, hp.IMG_WIDTH, hp.IMG_DEPTH])
-        self.flow_input = tf.placeholder(tf.float32,
-                [None, hp.FLOW_HEIGHT, hp.FLOW_WIDTH, hp.FLOW_DEPTH])
-        self.sensor_input = tf.placeholder(tf.float32, [None, hp.SENSOR_DIM])
-        self.motor_input = tf.placeholder(tf.float32, [None, hp.MOTOR_DIM])
-
         with tf.variable_scope('curr_Q'):
-            self.curr_pred = self.build_Q_net(trainable=True)
+            self.imgC, self.floC, self.senC, self.motC, self.curr_pred = self.build_Q_net(trainable=True)
         with tf.variable_scope('target_Q'):
-            self.target_pred = self.build_Q_net(trainable=False)
+            self.imgT, self.floT, self.senT, self.motT, self.curr_pred = self.build_Q_net(trainable=False)
 
         self.assign_op = self.build_assign('curr_Q', 'target_Q')
 
@@ -37,22 +30,29 @@ class DQN:
 
     def build_Q_net(self, trainable=True):
         # TODO: make this have an actually good net architecture
-        img_feat = tf.layers.conv2d(self.img_input, 1, 3, trainable=trainable)
+        img_input = tf.placeholder(tf.float32,
+                [None, hp.IMG_HEIGHT, hp.IMG_WIDTH, hp.IMG_DEPTH])
+        flow_input = tf.placeholder(tf.float32,
+                [None, hp.FLOW_HEIGHT, hp.FLOW_WIDTH, hp.FLOW_DEPTH])
+        sensor_input = tf.placeholder(tf.float32, [None, hp.SENSOR_DIM])
+        motor_input = tf.placeholder(tf.float32, [None, hp.MOTOR_DIM])
+
+        img_feat = tf.layers.conv2d(img_input, 1, 3, trainable=trainable)
         img_feat = tf.layers.flatten(img_feat)
         img_feat = tf.nn.relu(img_feat)
         img_feat = tf.layers.dense(img_feat, 10, trainable=trainable)
         img_feat = tf.nn.relu(img_feat)
 
-        flow_feat = tf.layers.conv2d(self.flow_input, 1, 3, trainable=trainable)
+        flow_feat = tf.layers.conv2d(flow_input, 1, 3, trainable=trainable)
         flow_feat = tf.layers.flatten(flow_feat)
         flow_feat = tf.nn.relu(flow_feat)
         flow_feat = tf.layers.dense(flow_feat, 10, trainable=trainable)
         flow_feat = tf.nn.relu(flow_feat)
 
         feat = tf.concat([img_feat, flow_feat,
-                self.sensor_input, self.motor_input], axis=1)
+                sensor_input, motor_input], axis=1)
         feat = tf.layers.dense(feat, hp.ACTION_SPACE_SIZE, trainable=trainable)
-        return feat
+        return img_input, flow_input, sensor_input, motor_input, feat
 
 
 
