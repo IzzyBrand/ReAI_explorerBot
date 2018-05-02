@@ -1,8 +1,13 @@
+"""
+Should run on Josh's machine.
+"""
 from flask import Flask
 from flask import request
 import cPickle as pickle
 
 app = Flask(__name__)
+
+network = DQN()
 
 @app.route('/action', methods=['POST'])
 def action():
