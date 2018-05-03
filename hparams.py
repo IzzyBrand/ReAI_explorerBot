@@ -18,3 +18,7 @@ DISCOUNT_FACTOR = 0.9
 
 # TODO: May want to decay by using a tf.Variable
 LEARNING_RATE = 3e-4
+
+MEMORY_SIZE = 1000
+
+BATCH_SIZE = 100

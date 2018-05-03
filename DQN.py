@@ -3,10 +3,15 @@ Should run on Josh's machine.
 """
 import tensorflow as tf
 import hparams as hp
+import numpy as np
+
+from collections import deque
+
+import util
 
 class DQN:
     def __init__(self):
-        self.replay_memory = []
+        self.replay_memory = deque(maxlen=hp.MEMORY_SIZE)
 
         with tf.variable_scope('curr_Q'):
             # Gets input placeholders and net outputs for current Q net
@@ -32,11 +37,17 @@ class DQN:
         self.assign_op = self.build_assign('target_Q', 'curr_Q')
 
         self.sess = tf.Session()
+        self.init_graph()
 
     def build_loss(self):
         y_j = self.r_j + hp.DISCOUNT_FACTOR * tf.reduce_max(self.target_pred,
                 axis=1)
-        return (y_j - self.curr_pred) ** 2
+        arange = tf.expand_dims(tf.range(tf.shape(self.a_j)[0]), 1)
+        a_j = tf.expand_dims(self.a_j, 1)
+        indices = tf.concat([arange, a_j], 1)
+        indices = tf.split(indices, 1, axis=0)
+        curr_Q_vals = tf.reshape(tf.gather_nd(self.curr_pred, indices), [-1])
+        return tf.reduce_mean((y_j - curr_Q_vals) ** 2)
 
     def build_assign(self, copy_to, copy_from):
         to_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
@@ -75,8 +86,55 @@ class DQN:
         feat = tf.layers.dense(feat, hp.ACTION_SPACE_SIZE, trainable=trainable)
         return img_input, flow_input, sensor_input, motor_input, feat
 
+    def init_graph(self):
+        self.sess.run(tf.global_variables_initializer())
+        self.sess.run(self.assign_op)
 
+    def get_curr_Q_action(self, img, flow, sensor, motor):
+        fd = {
+            self.imgC: np.expand_dims(img, axis=0),
+            self.floC: np.expand_dims(flow, axis=0),
+            self.senC: np.expand_dims(sensor, axis=0),
+            self.motC: np.expand_dims(motor, axis=0)
+        }
+        Q_vals = self.sess.run(self.curr_pred, feed_dict=fd)
+        return np.argmax(Q_vals, axis=1)[0]
 
+    def add_memory(self, mem):
+        self.replay_memory.append(mem)
+
+    def batch_update(self):
+        idxs = np.random.choice(len(self.replay_memory),
+                hp.BATCH_SIZE, replace=False)
+        # Get a list of (s_j, a_j, r_j, s_jp1) tuples
+        mems = [self.replay_memory[idx] for idx in idxs]
+        # Break these into coordinatewise lists, noting that zip is its own inverse!
+        # https://stackoverflow.com/questions/19339/transpose-unzip-function-inverse-of-zip
+        s_js, a_js, r_js, s_jp1s = zip(*mems)
+        # Similarly, break the states into their individual components, and
+        # create stacked np arrays for network input.
+        img_js, flow_js, sensor_js, motor_js = map(lambda ls:
+                np.stack(ls), zip(*s_js))
+        img_jp1s, flow_jp1s, sensor_jp1s, motor_jp1s = map(lambda ls:
+                np.stack(ls), zip(*s_jp1s))
+        a_js = np.concatenate(a_js)
+        r_js = np.concatenate(r_js)
+
+        fd = {
+            self.imgC: img_js,
+            self.floC: flow_js,
+            self.senC: sensor_js,
+            self.motC: motor_js,
+            self.imgT: img_jp1s,
+            self.floT: flow_jp1s,
+            self.senT: sensor_jp1s,
+            self.motT: motor_jp1s,
+            self.a_j: a_js[:],
+            self.r_j: r_js[:],
+        }
+
+        curr_loss, _ = self.sess.run([self.loss, self.train_op], feed_dict=fd)
+        print 'Current loss: ' + str(curr_loss)
 
 
 
@@ -101,3 +159,6 @@ make sure that tf.assign isn't making the target variables trainable
 
 if __name__ == '__main__':
     d = DQN()
+    for i in xrange(1050):
+        d.add_memory(util.get_random_mem())
+    d.batch_update()

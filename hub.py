@@ -120,6 +120,6 @@ if __name__ == '__main__':
     time.sleep(5)
     print('HERE WE GO')
     while True:
-        print request_action("http://138.16.161.77:5000", frame.data, flow.data, np.zeros(4), np.zeros(2))
+        print request_action("http://138.16.161.77:5000", (frame.data, flow.data, np.zeros(4), np.zeros(2)))
         driver.stop()
         worker.join()
