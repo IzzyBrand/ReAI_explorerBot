@@ -9,19 +9,40 @@ class DQN:
         self.replay_memory = []
 
         with tf.variable_scope('curr_Q'):
-            self.imgC, self.floC, self.senC, self.motC, self.curr_pred = self.build_Q_net(trainable=True)
+            # Gets input placeholders and net outputs for current Q net
+            self.imgC, self.floC, self.senC, self.motC, self.curr_pred = (
+                    self.build_Q_net(trainable=True))
         with tf.variable_scope('target_Q'):
-            self.imgT, self.floT, self.senT, self.motT, self.curr_pred = self.build_Q_net(trainable=False)
+            # Gets input placeholders and net outputs for target Q net
+            self.imgT, self.floT, self.senT, self.motT, self.target_pred = (
+                    self.build_Q_net(trainable=False))
 
-        self.assign_op = self.build_assign('curr_Q', 'target_Q')
+        # Action taken at step J
+        self.a_j = tf.placeholder(tf.int32, [None])
+        # Reward received at step J
+        self.r_j = tf.placeholder(tf.float32, [None])
+
+        self.loss = self.build_loss()
+
+        self.train_op = tf.train.GradientDescentOptimizer(
+                hp.LEARNING_RATE).minimize(self.loss)
+
+        # Operation used to update the target net to the parameters of the
+        # current net.
+        self.assign_op = self.build_assign('target_Q', 'curr_Q')
 
         self.sess = tf.Session()
 
-    def build_assign(self, copy_from, copy_to):
-        from_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
-                scope=copy_from)
+    def build_loss(self):
+        y_j = self.r_j + hp.DISCOUNT_FACTOR * tf.reduce_max(self.target_pred,
+                axis=1)
+        return (y_j - self.curr_pred) ** 2
+
+    def build_assign(self, copy_to, copy_from):
         to_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
                 scope=copy_to)
+        from_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
+                scope=copy_from)
         assert len(from_vars) == len(to_vars)
         ops = []
         for i in xrange(len(from_vars)):

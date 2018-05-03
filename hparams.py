@@ -13,3 +13,8 @@ SENSOR_DIM = 4
 
 ########### OTHER STUFF ###########
 ACTION_SPACE_SIZE = 3 * 3 # forward, nothing, backward for each motor
+
+DISCOUNT_FACTOR = 0.9
+
+# TODO: May want to decay by using a tf.Variable
+LEARNING_RATE = 3e-4
