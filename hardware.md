@@ -7,3 +7,8 @@
  * [Continuous Rotation Servos](https://www.adafruit.com/product/3614) X2
  *  [32GB MicroSD card](https://www.amazon.com/Sandisk-Ultra-Micro-UHS-I-Adapter/dp/B073JWXGNT/ref=sr_1_3?s=electronics&ie=UTF8&qid=1524163640&sr=1-3&keywords=32+gb+micro+sd+card)
  *  M3 screws
+ 
+ # 3D printed parts
+ 
+ * [Chassis](https://a360.co/2I8tb29)
+ * [Wheels](https://a360.co/2Iah2JP)
