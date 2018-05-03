@@ -18,7 +18,7 @@ def signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-weights = np.array([[ 0.8,  1.5, 1.5, 0.8],
+weights = np.array([[ 1.0,  1.5, 1.5, 1.0],
 					[-1.5, -0.5, 0.5, 1.5]])
 
 while True:
@@ -30,6 +30,10 @@ while True:
 		continue
 
 	speed, turn = np.matmul(weights, dists)
-	print speed, turn
-	d.move(speed*80,turn*40)
+	if not (dists==1).any():
+		print 'Ah'
+		turn = turn * 2
+	
+	print dists
+	d.move(speed*50,turn*50)
 
