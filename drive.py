@@ -24,6 +24,8 @@ class Servo:
 		''' Writes all the servos to the midpoint value '''
 		self.multi_write(np.ones_like(self.pins) * self.mid)
 
+	def close(self):
+		os.system("sudo killall servod")
 
 class Driver:
 	def __init__(self, m1,m2):
@@ -45,6 +47,10 @@ class Driver:
 		self.drive_m1 -= speed 
 		self.drive_m2 += speed
 		self.servo.multi_write([self.drive_m1, self.drive_m2])
+
+	def close(self):
+		self.stop()
+		self.servo.close()
 
 
 if __name__ == '__main__':

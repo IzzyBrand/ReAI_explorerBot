@@ -1,40 +1,38 @@
-from threading import Thread, Lock
+from threading import Thread
 from subprocess import Popen, PIPE
 import numpy as np
+import time
 
 
 class TofWorker(Thread):
-    def __init__(self, tof_array, tof_lock): 
+    def __init__(self): 
         Thread.__init__(self) 
-        self.tof_array = tof_array 
+        self.tof_array = None 
         self.tof_process = Popen(['./tof_test'], stdout=PIPE, stderr=PIPE) # start the tof sensors
-        self.tof_lock = tof_lock
 
     def run(self):
-        while True:
+        while self.tof_process is not None:
+            raw_dists = self.tof_process.stdout.readline().strip()
             try:
-                self.tof_lock.acquire(True)
-                raw_dists = self.tof_process.stdout.readline().strip()
                 self.tof_array = np.array([int(i) for i in raw_dists.split('\t')])/255. * 2. - 1.
-                print >> sys.stderr, self.tof_array
-                self.tof_lock.release()
             except:
-                print(raw_dists)
-                self.tof_lock.release()
-            continue
+                print raw_dists
+
+    def close(self):
+        self.tof_process.kill()
+        self.tof_process = None
+
 
 def main():
     tof_array = None
-    tof_lock = Lock()
-    worker = TofWorker(tof_array, tof_lock)
+    worker = TofWorker()
     worker.daemon = True
     worker.start()
-    while True:
-        tof_lock.acquire(True)
+    for _ in range(100):
         if (worker.tof_array is not None):
-            print("memes")
             print(worker.tof_array)
-        tof_lock.release()
+        time.sleep(0.1)
+    worker.close()
     worker.join()
 
 if __name__ == "__main__":
