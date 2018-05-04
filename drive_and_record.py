@@ -38,7 +38,15 @@ framerate = 15
 width, height = 160, 120
 
 if __name__ == '__main__':
-    ########################## START SIGNAL HANDLER ##########################
+    ########################### OPEN FIL AND SIGNAL ###########################
+    if len(sys.argv) < 2: 
+        print 'Please specify a filename'
+        sys.exit(1)
+
+    print 'Recording to', sys.argv[1]
+    f = open(sys.argv[1], 'ab')
+    functions_to_call_on_exit.append(("Closing " + sys.argv[1], f.close))
+
     signal.signal(signal.SIGINT, signal_handler)
 
     ########################### INIT THE TOF SENSOR ###########################
@@ -51,6 +59,8 @@ if __name__ == '__main__':
     ############################# INIT THE DRIVER #############################
     driver = Driver(12,18)
     functions_to_call_on_exit.append(("Closing servod process", driver.close))
+    tof_drive_weights = np.array([[ 1.0,  1.5, 1.5, 1.0],
+                                  [-1.5, -0.5, 0.5, 1.5]])
 
     ############################# INIT THE CAMERA #############################
     camera = picamera.PiCamera(framerate=40)
@@ -75,15 +85,26 @@ if __name__ == '__main__':
     time.sleep(5)
     print('HERE WE GO')
 
-    frequency = 10.
-    action = None
-    while True:
-        start = time.time()
-        # send data back to the DQN to get the next action
-        action = request_action("http://138.16.161.77:5000", (frame.data, flow.data, worker.tof_array, action))
-        if action is not None: driver.move(*action)
-        # delay to keep the loop frequency constant
-        elapsed = time.time() - start
-        delay = 1./frequency - elapsed
+    frequency = 20.
+    duration = 300
+
+    count = 0
+    start = time.time()
+    while time.time() - start < duration:
+        dists = worker.tof_array
+        if dists is not None:
+            command = np.matmul(tof_drive_weights, dists)
+            if not (dists==1).any(): command[1] = command[1] * 2
+            driver.move(command[0]*50,command[1]*50)
+            pickle.dump((frame.data, flow.data, dists, command, time.time() - start), f)
+
+        else: print "dists is None"
+
+        # print time.time() - start, count/frequency  
+        
+        delay = start + count/frequency - time.time()
         if delay > 1e-4: camera.wait_recording(delay)
-        else: print 1./elapsed
+        else: print delay
+        count += 1
+
+    signal_handler(0, 0) # exit

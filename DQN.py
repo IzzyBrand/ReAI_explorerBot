@@ -10,7 +10,7 @@ from collections import deque
 import util
 
 class DQN:
-    def __init__(self):
+    def __init__(self, mem_files = []):
         self.replay_memory = deque(maxlen=hp.MEMORY_SIZE)
 
         with tf.variable_scope('curr_Q'):
@@ -102,6 +102,14 @@ class DQN:
 
     def add_memory(self, mem):
         self.replay_memory.append(mem)
+
+    def load_memory_from_file(self, file):
+        with open(sys.argv[1], 'rb') as f:
+            counter = 0
+            while True: 
+                try:
+                    frame, flow, tof, action = pickle.load(f)
+                    
 
     def batch_update(self):
         idxs = np.random.choice(len(self.replay_memory),
