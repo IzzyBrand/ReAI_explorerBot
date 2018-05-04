@@ -5,6 +5,7 @@ import tensorflow as tf
 import hparams as hp
 import numpy as np
 import sys
+import cPickle as pickle
 
 from collections import deque
 
@@ -148,9 +149,10 @@ class DQN:
                         s_jp1   = x_jp1[:3]
                         tof_jp1 = x_jp1[4]
                         r_j = util.get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1)
-                        self.add_memory(s_j, a_j, r_j, s_jp1)
+                        self.add_memory((s_j, a_j, r_j, s_jp1))
                 except EOFError:
                     break
+            print 'Added {} memories to memory.'.format(count)
 
     def batch_update(self, global_step):
         idxs = np.random.choice(len(self.replay_memory),
@@ -186,10 +188,6 @@ class DQN:
         self.writer.add_summary(summary, global_step)
 
 
-
-
-
-
 """
 with tf.variable_scope('Q')
 with tf.variable_scope('Q_target')
@@ -208,8 +206,8 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    d = DQN()
-    for i in xrange(1050):
-        d.add_memory(util.get_random_mem())
+    d = DQN(sys.argv[1:])
+    # for i in xrange(1050):
+    #     d.add_memory(util.get_random_mem())
     for i in xrange(20):
         d.batch_update(i)
