@@ -4,6 +4,7 @@ Should run on Josh's machine.
 import tensorflow as tf
 import hparams as hp
 import numpy as np
+import sys
 
 from collections import deque
 
@@ -40,7 +41,16 @@ class DQN:
         self.init_graph()
 
         self.merged = tf.summary.merge_all()
-        self.writer = tf.summary.FileWriter("testdir/", self.sess.graph)
+
+        logdirstring = "logs/log"
+        for x in dir(hp):
+            if x.isupper():
+                logdirstring += "_"
+                # logdirstring += str(x)
+                # logdirstring += "-"
+                logdirstring += str(getattr(hp, x))
+        logdirstring += "/"
+        self.writer = tf.summary.FileWriter(logdirstring, self.sess.graph)
 
     def build_loss(self):
         y_j = self.r_j + hp.DISCOUNT_FACTOR * tf.reduce_max(self.target_pred,
