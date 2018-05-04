@@ -9,6 +9,7 @@ from request import request_action
 from drive import Driver
 from tof_thread import TofWorker
 import util
+import hparams as h
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self):
@@ -86,20 +87,20 @@ if __name__ == '__main__':
     print('HERE WE GO')
 
     frequency = 20.
-    duration = 300
+    duration = 60
     max_motor_delta = h.MOTOR_VALS[-1]
     timer_start = time.time()
     while time.time() - timer_start < duration:
         start = time.time()
         dists = worker.tof_array
         if dists is not None:
-            old_policy = np.matmul(direct_drive_weights, dists)
+            old_policy = np.matmul(direct_drive_weights, dists) * 50. + 1500 
             desired_delta = old_policy - np.array((driver.m1, driver.m2))
             dm1, dm2 = np.sign(desired_delta) \
                        * (np.abs(desired_delta) > max_motor_delta) \
                        * max_motor_delta
-
             action = util.motor_to_action(dm1,dm2)
+            print action, dm1, dm2
             driver.dmotor(dm1, dm2)
             # each x_j should be a tuple of (frame, flow, motor, action, tof)
             x_j = (frame.data, flow.data, (driver.m1, driver.m2), action, dists)

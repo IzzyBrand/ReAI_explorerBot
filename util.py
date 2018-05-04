@@ -25,4 +25,4 @@ def action_to_motor(action):
 	return m1[action], m2[action]
 
 def motor_to_action(dm1,dm2):
-	return np.argmax((m1 == dm1) + (m2 == dm2))
+	return np.argmax(np.logical_and((m1 == dm1), (m2 == dm2)))

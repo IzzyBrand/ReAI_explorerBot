@@ -40,10 +40,12 @@ class Driver:
 		self.m2 = self.mid + speed + turn
 		self.servo.multi_write([self.m1, self.m2])
 
-	def dmotor(m1, m2):
+	def dmotor(self, m1, m2):
 		''' Delta the motor speeds by the specified amounts '''
 		self.m1 += m1
 		self.m2 += m2
+                self.m1 = np.clip(self.m1, 1000,2000)
+                self.m2 = np.clip(self.m2, 1000,2000)
 		self.servo.multi_write([self.m1, self.m2])
 
 	def stop(self):
