@@ -1,6 +1,9 @@
+import numpy as np
 ########### INPUT PARAMS ###########
-HISTORY_LEN = 4
+FREQUENCY = 10 # loop frequency of the controller
+FRAMERATE = 20 # framerate of the controller
 
+HISTORY_LEN = 4
 IMG_HEIGHT = 112
 IMG_WIDTH = 192
 IMG_DEPTH = 3 * HISTORY_LEN # 3 color channels, 4 frame history
@@ -14,7 +17,8 @@ MOTOR_DIM = 2 * HISTORY_LEN
 SENSOR_DIM = 4 * HISTORY_LEN
 
 ########### OTHER STUFF ###########
-ACTION_SPACE_SIZE = 3 * 3 # forward, nothing, backward for each motor
+MOTOR_VALS = np.array([-10,0,10]) # forward, nothing, backward for each motor
+ACTION_SPACE_SIZE = motor_vals.shape[0]**2 
 
 DISCOUNT_FACTOR = 0.9
 
