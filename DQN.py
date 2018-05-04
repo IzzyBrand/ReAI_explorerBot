@@ -39,6 +39,9 @@ class DQN:
         self.sess = tf.Session()
         self.init_graph()
 
+        self.merged = tf.summary.merge_all()
+        self.writer = tf.summary.FileWriter("testdir/", self.sess.graph)
+
     def build_loss(self):
         y_j = self.r_j + hp.DISCOUNT_FACTOR * tf.reduce_max(self.target_pred,
                 axis=1)
@@ -47,7 +50,9 @@ class DQN:
         indices = tf.concat([arange, a_j], 1)
         indices = tf.split(indices, 1, axis=0)
         curr_Q_vals = tf.reshape(tf.gather_nd(self.curr_pred, indices), [-1])
-        return tf.reduce_mean((y_j - curr_Q_vals) ** 2)
+        loss = tf.reduce_mean((y_j - curr_Q_vals) ** 2)
+        tf.summary.scalar('loss', loss)
+        return loss
 
     def build_assign(self, copy_to, copy_from):
         to_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
@@ -106,7 +111,7 @@ class DQN:
             x_j = None
             x_jp1 = None
             # each x_j should be a tuple of (frame, flow, motor, action, tof)
-            while True: 
+            while True:
                 try:
                     x_j = x_jp1
                     x_jp1 = pickle.load(f)
@@ -122,7 +127,7 @@ class DQN:
                 except EOFError:
                     break
 
-    def batch_update(self):
+    def batch_update(self, global_step):
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
@@ -150,8 +155,11 @@ class DQN:
             self.r_j: r_js,
         }
 
-        curr_loss, _ = self.sess.run([self.loss, self.train_op], feed_dict=fd)
+        summary, curr_loss, _ = self.sess.run([self.merged, self.loss, self.train_op], feed_dict=fd)
         print 'Current loss: ' + str(curr_loss)
+
+        self.writer.add_summary(summary, global_step)
+
 
 
 
@@ -178,4 +186,5 @@ if __name__ == '__main__':
     d = DQN()
     for i in xrange(1050):
         d.add_memory(util.get_random_mem())
-    d.batch_update()
+    for i in xrange(20):
+        d.batch_update(i)
