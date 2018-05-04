@@ -46,7 +46,7 @@ if __name__ == '__main__':
     print 'Recording to', sys.argv[1]
     f = open(sys.argv[1], 'ab')
     functions_to_call_on_exit.append(("Closing " + sys.argv[1], f.close))
-    
+
     signal.signal(signal.SIGINT, signal_handler)
 
     ########################### INIT THE TOF SENSOR ###########################
