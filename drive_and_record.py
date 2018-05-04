@@ -8,6 +8,7 @@ import time
 from request import request_action
 from drive import Driver
 from tof_thread import TofWorker
+import util
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self):
@@ -32,10 +33,6 @@ def signal_handler(signal, frame):
         f[1]()
     print 'EXITING'
     sys.exit(0)
-
-
-framerate = 15
-width, height = 160, 120
 
 if __name__ == '__main__':
     ########################### OPEN FIL AND SIGNAL ###########################
@@ -63,8 +60,8 @@ if __name__ == '__main__':
                                   [-1.5, -0.5, 0.5, 1.5]])
 
     ############################# INIT THE CAMERA #############################
-    camera = picamera.PiCamera(framerate=40)
-    camera.resolution = (width, height)
+    camera = picamera.PiCamera(framerate=h.FRAMERATE)
+    camera.resolution = (h.IMG_WIDTH, h.IMG_HEIGHT)
     frame = FrameAnalyzer(camera)
     flow = FlowAnalyzer(camera)
 
@@ -87,24 +84,23 @@ if __name__ == '__main__':
 
     frequency = 20.
     duration = 300
-
-    count = 0
-    start = time.time()
-    while time.time() - start < duration:
+    timer_start = time.time()
+    while time.time() - timer_start < duration:
+        start = time.time()
         dists = worker.tof_array
         if dists is not None:
-            command = np.matmul(tof_drive_weights, dists)
-            if not (dists==1).any(): command[1] = command[1] * 2
-            driver.move(command[0]*50,command[1]*50)
-            pickle.dump((frame.data, flow.data, dists, command, time.time() - start), f)
+            action = 4 # TODO, generate the action from the dists
+            m1, m2 = util.action_to_motor(action)
+            driver.dmotor(m1, m2)
+            # each x_j should be a tuple of (frame, flow, motor, action, tof)
+            x_j = (frame.data, flow.data, (driver.m1, driver.m2), action, dists)
+            pickle.dump(x_j, f)
 
         else: print "dists is None"
 
-        # print time.time() - start, count/frequency  
-        
-        delay = start + count/frequency - time.time()
+        elapsed = time.time() - start
+        delay = 1./h.FREQUENCY - elapsed
         if delay > 1e-4: camera.wait_recording(delay)
-        else: print delay
-        count += 1
+        else: print 1./elapsed
 
     signal_handler(0, 0) # exit
