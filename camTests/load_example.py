@@ -14,14 +14,14 @@ print 'Reading from', sys.argv[1]
 
 with open(sys.argv[1], 'rb') as f:
     counter = 0
-    while True: 
+    while True:
         try:
             frame = pickle.load(f)
             counter += 1
         except EOFError:
             break
 
+    print 'Loaded {} frames'.format(counter)
     print(frame)
     plt.imshow(frame)
     plt.show()
-    print 'Loaded {} frames'.format(counter)

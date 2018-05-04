@@ -10,16 +10,16 @@ from collections import deque
 import util
 
 class DQN:
-    def __init__(self):
+    def __init__(self, mem_files = []):
         self.replay_memory = deque(maxlen=hp.MEMORY_SIZE)
-
+        for f in mem_files: self.add_file_to_memory(f)
         with tf.variable_scope('curr_Q'):
             # Gets input placeholders and net outputs for current Q net
-            self.imgC, self.floC, self.senC, self.motC, self.curr_pred = (
+            self.imgC, self.floC, self.motC, self.curr_pred = (
                     self.build_Q_net(trainable=True))
         with tf.variable_scope('target_Q'):
             # Gets input placeholders and net outputs for target Q net
-            self.imgT, self.floT, self.senT, self.motT, self.target_pred = (
+            self.imgT, self.floT, self.motT, self.target_pred = (
                     self.build_Q_net(trainable=False))
 
         # Action taken at step J
@@ -39,6 +39,9 @@ class DQN:
         self.sess = tf.Session()
         self.init_graph()
 
+        self.merged = tf.summary.merge_all()
+        self.writer = tf.summary.FileWriter("testdir/", self.sess.graph)
+
     def build_loss(self):
         y_j = self.r_j + hp.DISCOUNT_FACTOR * tf.reduce_max(self.target_pred,
                 axis=1)
@@ -47,7 +50,9 @@ class DQN:
         indices = tf.concat([arange, a_j], 1)
         indices = tf.split(indices, 1, axis=0)
         curr_Q_vals = tf.reshape(tf.gather_nd(self.curr_pred, indices), [-1])
-        return tf.reduce_mean((y_j - curr_Q_vals) ** 2)
+        loss = tf.reduce_mean((y_j - curr_Q_vals) ** 2)
+        tf.summary.scalar('loss', loss)
+        return loss
 
     def build_assign(self, copy_to, copy_from):
         to_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
@@ -60,41 +65,53 @@ class DQN:
             ops.append(tf.assign(to_vars[i], from_vars[i]))
         return tf.group(*ops)
 
+    def apply_convolution(self, input, output_depth, filter_size, trainable=None):
+        input = tf.layers.conv2d(input, output_depth, filter_size,
+                trainable=trainable)
+        input = tf.layers.batch_normalization(input, trainable=trainable)
+        input = tf.nn.relu(input)
+        return input
+
     def build_Q_net(self, trainable=True):
-        # TODO: make this have an actually good net architecture
         img_input = tf.placeholder(tf.float32,
                 [None, hp.IMG_HEIGHT, hp.IMG_WIDTH, hp.IMG_DEPTH])
         flow_input = tf.placeholder(tf.float32,
                 [None, hp.FLOW_HEIGHT, hp.FLOW_WIDTH, hp.FLOW_DEPTH])
-        sensor_input = tf.placeholder(tf.float32, [None, hp.SENSOR_DIM])
         motor_input = tf.placeholder(tf.float32, [None, hp.MOTOR_DIM])
 
-        img_feat = tf.layers.conv2d(img_input, 1, 3, trainable=trainable)
+        img_feat = img_input
+        for _ in xrange(hp.IMG_CONV_LAYERS):
+            img_feat = self.apply_convolution(img_feat, 3, 3, trainable=trainable)
         img_feat = tf.layers.flatten(img_feat)
-        img_feat = tf.nn.relu(img_feat)
         img_feat = tf.layers.dense(img_feat, 10, trainable=trainable)
         img_feat = tf.nn.relu(img_feat)
 
-        flow_feat = tf.layers.conv2d(flow_input, 1, 3, trainable=trainable)
+        flow_feat = flow_input
+        for _ in xrange(hp.FLOW_CONV_LAYERS):
+            flow_feat = self.apply_convolution(flow_feat, 3, 3, trainable=trainable)
         flow_feat = tf.layers.flatten(flow_feat)
-        flow_feat = tf.nn.relu(flow_feat)
         flow_feat = tf.layers.dense(flow_feat, 10, trainable=trainable)
         flow_feat = tf.nn.relu(flow_feat)
 
-        feat = tf.concat([img_feat, flow_feat,
-                sensor_input, motor_input], axis=1)
+        motor_feat = motor_input
+        for _ in xrange(hp.MOTOR_FC_LAYERS):
+            motor_feat = tf.layers.dense(motor_feat, 10, trainable=trainable)
+            motor_feat = tf.nn.relu(motor_feat)
+
+        feat = tf.concat([img_feat, flow_feat, motor_input], axis=1)
+        feat = tf.layers.dense(feat, 30, trainable=trainable)
+        feat = tf.nn.relu(feat)
         feat = tf.layers.dense(feat, hp.ACTION_SPACE_SIZE, trainable=trainable)
-        return img_input, flow_input, sensor_input, motor_input, feat
+        return img_input, flow_input, motor_input, feat
 
     def init_graph(self):
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(self.assign_op)
 
-    def get_curr_Q_action(self, img, flow, sensor, motor):
+    def get_curr_Q_action(self, img, flow, motor):
         fd = {
             self.imgC: np.expand_dims(img, axis=0),
             self.floC: np.expand_dims(flow, axis=0),
-            self.senC: np.expand_dims(sensor, axis=0),
             self.motC: np.expand_dims(motor, axis=0)
         }
         Q_vals = self.sess.run(self.curr_pred, feed_dict=fd)
@@ -103,7 +120,29 @@ class DQN:
     def add_memory(self, mem):
         self.replay_memory.append(mem)
 
-    def batch_update(self):
+    def add_file_to_memory(self, filename):
+        with open(filename, 'rb') as f:
+            count = 0
+            x_j = None
+            x_jp1 = None
+            # each x_j should be a tuple of (frame, flow, motor, action, tof)
+            while True:
+                try:
+                    x_j = x_jp1
+                    x_jp1 = pickle.load(f)
+                    if x_jp1 is not None and x_j is not None:
+                        count += 1
+                        s_j     = x_j[:3]
+                        a_j     = x_j[3]
+                        tof_j   = x_j[4]
+                        s_jp1   = x_jp1[:3]
+                        tof_jp1 = x_jp1[4]
+                        r_j = util.get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1)
+                        self.add_memory(s_j, a_j, r_j, s_jp1)
+                except EOFError:
+                    break
+
+    def batch_update(self, global_step):
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
@@ -113,9 +152,9 @@ class DQN:
         s_js, a_js, r_js, s_jp1s = zip(*mems)
         # Similarly, break the states into their individual components, and
         # create stacked np arrays for network input.
-        img_js, flow_js, sensor_js, motor_js = map(lambda ls:
+        img_js, flow_js, motor_js = map(lambda ls:
                 np.stack(ls), zip(*s_js))
-        img_jp1s, flow_jp1s, sensor_jp1s, motor_jp1s = map(lambda ls:
+        img_jp1s, flow_jp1s, motor_jp1s = map(lambda ls:
                 np.stack(ls), zip(*s_jp1s))
         a_js = np.concatenate(a_js)
         r_js = np.concatenate(r_js)
@@ -123,18 +162,19 @@ class DQN:
         fd = {
             self.imgC: img_js,
             self.floC: flow_js,
-            self.senC: sensor_js,
             self.motC: motor_js,
             self.imgT: img_jp1s,
             self.floT: flow_jp1s,
-            self.senT: sensor_jp1s,
             self.motT: motor_jp1s,
-            self.a_j: a_js[:],
-            self.r_j: r_js[:],
+            self.a_j: a_js,
+            self.r_j: r_js,
         }
 
-        curr_loss, _ = self.sess.run([self.loss, self.train_op], feed_dict=fd)
+        summary, curr_loss, _ = self.sess.run([self.merged, self.loss, self.train_op], feed_dict=fd)
         print 'Current loss: ' + str(curr_loss)
+
+        self.writer.add_summary(summary, global_step)
+
 
 
 
@@ -161,4 +201,5 @@ if __name__ == '__main__':
     d = DQN()
     for i in xrange(1050):
         d.add_memory(util.get_random_mem())
-    d.batch_update()
+    for i in xrange(20):
+        d.batch_update(i)

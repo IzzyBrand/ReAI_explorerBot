@@ -8,6 +8,7 @@ import time
 from request import request_action
 from drive import Driver
 from tof_thread import TofWorker
+import util
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self):
@@ -15,7 +16,6 @@ class FrameAnalyzer(picamera.array.PiRGBAnalysis):
 
     def analyse(self, array):
         self.data = array
-
 
 class FlowAnalyzer(picamera.array.PiMotionAnalysis):
     def setup(self):
@@ -33,10 +33,6 @@ def signal_handler(signal, frame):
     print 'EXITING'
     sys.exit(0)
 
-
-framerate = 15
-width, height = 160, 120
-
 if __name__ == '__main__':
     ########################### OPEN FIL AND SIGNAL ###########################
     if len(sys.argv) < 2: 
@@ -46,7 +42,7 @@ if __name__ == '__main__':
     print 'Recording to', sys.argv[1]
     f = open(sys.argv[1], 'ab')
     functions_to_call_on_exit.append(("Closing " + sys.argv[1], f.close))
-    
+
     signal.signal(signal.SIGINT, signal_handler)
 
     ########################### INIT THE TOF SENSOR ###########################
@@ -59,12 +55,16 @@ if __name__ == '__main__':
     ############################# INIT THE DRIVER #############################
     driver = Driver(12,18)
     functions_to_call_on_exit.append(("Closing servod process", driver.close))
+    # array of weights to generate desired speed and turn from tof_array
     tof_drive_weights = np.array([[ 1.0,  1.5, 1.5, 1.0],
                                   [-1.5, -0.5, 0.5, 1.5]])
+    # array of weight to generate desired motor1 and motor2 speeds
+    direct_drive_weights = np.array([[-2.5, -2. , -1. ,  0.5],
+                                     [-0.5,  1. ,  2. ,  2.5]])
 
     ############################# INIT THE CAMERA #############################
-    camera = picamera.PiCamera(framerate=40)
-    camera.resolution = (width, height)
+    camera = picamera.PiCamera(framerate=h.FRAMERATE)
+    camera.resolution = (h.IMG_WIDTH, h.IMG_HEIGHT)
     frame = FrameAnalyzer(camera)
     flow = FlowAnalyzer(camera)
 
@@ -87,24 +87,29 @@ if __name__ == '__main__':
 
     frequency = 20.
     duration = 300
-
-    count = 0
-    start = time.time()
-    while time.time() - start < duration:
+    max_motor_delta = h.MOTOR_VALS[-1]
+    timer_start = time.time()
+    while time.time() - timer_start < duration:
+        start = time.time()
         dists = worker.tof_array
         if dists is not None:
-            command = np.matmul(tof_drive_weights, dists)
-            if not (dists==1).any(): command[1] = command[1] * 2
-            driver.move(command[0]*50,command[1]*50)
-            pickle.dump((frame.data, flow.data, dists, command, time.time() - start), f)
+            old_policy = np.matmul(direct_drive_weights, dists)
+            desired_delta = old_policy - np.array((driver.m1, driver.m2))
+            dm1, dm2 = np.sign(desired_delta) \
+                       * (np.abs(desired_delta) > max_motor_delta) \
+                       * max_motor_delta
+
+            action = util.motor_to_action(dm1,dm2)
+            driver.dmotor(dm1, dm2)
+            # each x_j should be a tuple of (frame, flow, motor, action, tof)
+            x_j = (frame.data, flow.data, (driver.m1, driver.m2), action, dists)
+            pickle.dump(x_j, f)
 
         else: print "dists is None"
 
-        # print time.time() - start, count/frequency  
-        
-        delay = start + count/frequency - time.time()
+        elapsed = time.time() - start
+        delay = 1./h.FREQUENCY - elapsed
         if delay > 1e-4: camera.wait_recording(delay)
-        else: print delay
-        count += 1
+        else: print 1./elapsed
 
     signal_handler(0, 0) # exit

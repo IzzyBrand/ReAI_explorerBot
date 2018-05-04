@@ -31,22 +31,28 @@ class Driver:
 	def __init__(self, m1,m2):
 		self.servo = Servo([m1,m2])
 		self.mid = 1500
-		self.drive_m1 = self.mid
-		self.drive_m2 = self.mid
+		self.m1 = self.mid
+		self.m2 = self.mid
 
 	def move(self, speed, turn):
 		''' Move forward at `speed`, and rotate `turn`'''
-		self.drive_m1 = self.mid - speed + turn
-		self.drive_m2 = self.mid + speed + turn
-		self.servo.multi_write([self.drive_m1, self.drive_m2])
+		self.m1 = self.mid - speed + turn
+		self.m2 = self.mid + speed + turn
+		self.servo.multi_write([self.m1, self.m2])
+
+	def dmotor(m1, m2):
+		''' Delta the motor speeds by the specified amounts '''
+		self.m1 += m1
+		self.m2 += m2
+		self.servo.multi_write([self.m1, self.m2])
 
 	def stop(self):
 		self.move(0,0)
 
 	def dfb(self,speed):
-		self.drive_m1 -= speed 
-		self.drive_m2 += speed
-		self.servo.multi_write([self.drive_m1, self.drive_m2])
+		self.m1 -= speed 
+		self.m2 += speed
+		self.servo.multi_write([self.m1, self.m2])
 
 	def close(self):
 		self.stop()
