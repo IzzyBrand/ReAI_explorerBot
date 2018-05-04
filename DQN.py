@@ -12,7 +12,7 @@ import util
 class DQN:
     def __init__(self, mem_files = []):
         self.replay_memory = deque(maxlen=hp.MEMORY_SIZE)
-
+        for f in mem_files: self.add_file_to_memory(f)
         with tf.variable_scope('curr_Q'):
             # Gets input placeholders and net outputs for current Q net
             self.imgC, self.floC, self.motC, self.curr_pred = (
@@ -100,14 +100,27 @@ class DQN:
     def add_memory(self, mem):
         self.replay_memory.append(mem)
 
-    def load_memory_from_file(self, file):
-        with open(sys.argv[1], 'rb') as f:
-            counter = 0
-            while True:
+    def add_file_to_memory(self, filename):
+        with open(filename, 'rb') as f:
+            count = 0
+            x_j = None
+            x_jp1 = None
+            # each x_j should be a tuple of (frame, flow, motor, action, tof)
+            while True: 
                 try:
-                    frame, flow, tof, action = pickle.load(f)
-                except:
-                    pass
+                    x_j = x_jp1
+                    x_jp1 = pickle.load(f)
+                    if x_jp1 is not None and x_j is not None:
+                        count += 1
+                        s_j     = x_j[:3]
+                        a_j     = x_j[3]
+                        tof_j   = x_j[4]
+                        s_jp1   = x_jp1[:3]
+                        tof_jp1 = x_jp1[4]
+                        r_j = util.get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1)
+                        self.add_memory(s_j, a_j, r_j, s_jp1)
+                except EOFError:
+                    break
 
     def batch_update(self):
         idxs = np.random.choice(len(self.replay_memory),
