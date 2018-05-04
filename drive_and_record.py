@@ -9,35 +9,19 @@ from request import request_action
 from drive import Driver
 from tof_thread import TofWorker
 
-speed = 0
-turn = 0
-
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
-    def setup(self, filename=None):
+    def setup(self):
         self.data = None
-        if filename is not None: self.file = open(filename + "_frame.pkl", 'ab')
-        else: self.file = None
 
     def analyse(self, array):
         self.data = array
-        if self.file is not None: pickle.dump(array, self.file)
-
-    def close(self):
-        if self.file is not None: self.file.close()
 
 
 class FlowAnalyzer(picamera.array.PiMotionAnalysis):
-    def setup(self, filename=None):
+    def setup(self):
         self.data = None
-        if filename is not None: self.file = open(filename + "_flow.pkl", 'ab')
-        else: self.file = None
-
     def analyse(self, array):
         self.data = array
-        if self.file is not None: pickle.dump((array,speed,turn), self.file)
-
-    def close(self):
-        if self.file is not None: self.file.close()
 
 functions_to_call_on_exit = []
 
@@ -54,9 +38,18 @@ framerate = 15
 width, height = 160, 120
 
 if __name__ == '__main__':
+    ########################### OPEN FIL AND SIGNAL ###########################
+    if len(sys.argv) < 2: 
+        print 'Please specify a filename'
+        sys.exit(1)
+
+    print 'Recording to', sys.argv[1]
+    f = open(sys.argv[1], 'ab')
+    functions_to_call_on_exit.append(("Closing " + sys.argv[1], f.close))
+    
     signal.signal(signal.SIGINT, signal_handler)
+
     ########################### INIT THE TOF SENSOR ###########################
-    # TODO: Initialize threading module to read from the TOF sensor
     worker = TofWorker()
     worker.daemon = True
     worker.start()
@@ -70,24 +63,18 @@ if __name__ == '__main__':
                                   [-1.5, -0.5, 0.5, 1.5]])
 
     ############################# INIT THE CAMERA #############################
-    camera = picamera.PiCamera(framerate=30)
+    camera = picamera.PiCamera(framerate=40)
     camera.resolution = (width, height)
     frame = FrameAnalyzer(camera)
     flow = FlowAnalyzer(camera)
-    if len(sys.argv) > 1:
-        print "Saving camera data to", sys.argv[1]
-        frame.setup(sys.argv[1])
-        flow.setup(sys.argv[1])
-    else:
-        frame.setup()
-        flow.setup()
+
+    frame.setup()
+    flow.setup()
     camera.start_recording("/dev/null", format='h264',
         splitter_port=1, motion_output=flow)
     camera.start_recording(frame, format='rgb',
         splitter_port=2)
 
-    functions_to_call_on_exit.append(("Closing frame writer", frame.close))
-    functions_to_call_on_exit.append(("Closing flow writer", flow.close))
     functions_to_call_on_exit.append(("Closing splitter 1", lambda:
         camera.stop_recording(splitter_port=1)))
     functions_to_call_on_exit.append(("Closing splitter 2", lambda:
@@ -97,19 +84,27 @@ if __name__ == '__main__':
     print('Giving all the things a moment to boot up')
     time.sleep(5)
     print('HERE WE GO')
+
+    frequency = 20.
+    duration = 300
+
+    count = 0
     start = time.time()
-    while time.time() - start < 30:
+    while time.time() - start < duration:
         dists = worker.tof_array
         if dists is not None:
-            speed, turn = np.matmul(tof_drive_weights, dists)
-            if not (dists==1).any():
-                print 'Ah'
-                turn = turn * 2
-            
-            print dists
-            driver.move(speed*50,turn*50)
-        else: 
-            print "dists is None"
-            time.sleep(0.2)
-            
-    signal_handler(0, 0)
+            command = np.matmul(tof_drive_weights, dists)
+            if not (dists==1).any(): command[1] = command[1] * 2
+            driver.move(command[0]*50,command[1]*50)
+            pickle.dump((frame.data, flow.data, dists, command, time.time() - start), f)
+
+        else: print "dists is None"
+
+        # print time.time() - start, count/frequency  
+        
+        delay = start + count/frequency - time.time()
+        if delay > 1e-4: camera.wait_recording(delay)
+        else: print 'Slipping'
+        count += 1
+
+    signal_handler(0, 0) # exit
