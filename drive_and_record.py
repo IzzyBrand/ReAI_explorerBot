@@ -104,7 +104,7 @@ if __name__ == '__main__':
         
         delay = start + count/frequency - time.time()
         if delay > 1e-4: camera.wait_recording(delay)
-        else: print 'Slipping'
+        else: print delay
         count += 1
 
     signal_handler(0, 0) # exit
