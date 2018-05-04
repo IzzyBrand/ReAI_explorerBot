@@ -1,5 +1,5 @@
 ########### INPUT PARAMS ###########
-IMG_HEIGHT = 108
+IMG_HEIGHT = 112
 IMG_WIDTH = 192
 IMG_DEPTH = 3 * 4 # 3 color channels, 4 frame history
 
