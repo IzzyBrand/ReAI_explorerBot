@@ -9,10 +9,13 @@ from request import request_action
 from drive import Driver
 from tof_thread import TofWorker
 
+speed = 0
+turn = 0
+
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self, filename=None):
         self.data = None
-        if filename is not None: self.file = open(filename, 'ab')
+        if filename is not None: self.file = open(filename + "_frame.pkl", 'ab')
         else: self.file = None
 
     def analyse(self, array):
@@ -26,12 +29,12 @@ class FrameAnalyzer(picamera.array.PiRGBAnalysis):
 class FlowAnalyzer(picamera.array.PiMotionAnalysis):
     def setup(self, filename=None):
         self.data = None
-        if filename is not None: self.file = open(filename, 'ab')
+        if filename is not None: self.file = open(filename + "_flow.pkl", 'ab')
         else: self.file = None
 
     def analyse(self, array):
         self.data = array
-        if self.file is not None: pickle.dump(array, self.file)
+        if self.file is not None: pickle.dump((array,speed,turn), self.file)
 
     def close(self):
         if self.file is not None: self.file.close()
@@ -67,12 +70,17 @@ if __name__ == '__main__':
                                   [-1.5, -0.5, 0.5, 1.5]])
 
     ############################# INIT THE CAMERA #############################
-    camera = picamera.PiCamera(framerate=90)
+    camera = picamera.PiCamera(framerate=30)
     camera.resolution = (width, height)
     frame = FrameAnalyzer(camera)
     flow = FlowAnalyzer(camera)
-    frame.setup()
-    flow.setup()
+    if len(sys.argv) > 1:
+        print "Saving camera data to", sys.argv[1]
+        frame.setup(sys.argv[1])
+        flow.setup(sys.argv[1])
+    else:
+        frame.setup()
+        flow.setup()
     camera.start_recording("/dev/null", format='h264',
         splitter_port=1, motion_output=flow)
     camera.start_recording(frame, format='rgb',
@@ -89,7 +97,8 @@ if __name__ == '__main__':
     print('Giving all the things a moment to boot up')
     time.sleep(5)
     print('HERE WE GO')
-    while True:
+    start = time.time()
+    while time.time() - start < 30:
         dists = worker.tof_array
         if dists is not None:
             speed, turn = np.matmul(tof_drive_weights, dists)
@@ -102,3 +111,5 @@ if __name__ == '__main__':
         else: 
             print "dists is None"
             time.sleep(0.2)
+            
+    signal_handler(0, 0)
