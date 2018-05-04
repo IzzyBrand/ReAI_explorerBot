@@ -15,11 +15,11 @@ class DQN:
 
         with tf.variable_scope('curr_Q'):
             # Gets input placeholders and net outputs for current Q net
-            self.imgC, self.floC, self.senC, self.motC, self.curr_pred = (
+            self.imgC, self.floC, self.motC, self.curr_pred = (
                     self.build_Q_net(trainable=True))
         with tf.variable_scope('target_Q'):
             # Gets input placeholders and net outputs for target Q net
-            self.imgT, self.floT, self.senT, self.motT, self.target_pred = (
+            self.imgT, self.floT, self.motT, self.target_pred = (
                     self.build_Q_net(trainable=False))
 
         # Action taken at step J
@@ -66,7 +66,6 @@ class DQN:
                 [None, hp.IMG_HEIGHT, hp.IMG_WIDTH, hp.IMG_DEPTH])
         flow_input = tf.placeholder(tf.float32,
                 [None, hp.FLOW_HEIGHT, hp.FLOW_WIDTH, hp.FLOW_DEPTH])
-        sensor_input = tf.placeholder(tf.float32, [None, hp.SENSOR_DIM])
         motor_input = tf.placeholder(tf.float32, [None, hp.MOTOR_DIM])
 
         img_feat = tf.layers.conv2d(img_input, 1, 3, trainable=trainable)
@@ -81,20 +80,18 @@ class DQN:
         flow_feat = tf.layers.dense(flow_feat, 10, trainable=trainable)
         flow_feat = tf.nn.relu(flow_feat)
 
-        feat = tf.concat([img_feat, flow_feat,
-                sensor_input, motor_input], axis=1)
+        feat = tf.concat([img_feat, flow_feat, motor_input], axis=1)
         feat = tf.layers.dense(feat, hp.ACTION_SPACE_SIZE, trainable=trainable)
-        return img_input, flow_input, sensor_input, motor_input, feat
+        return img_input, flow_input, motor_input, feat
 
     def init_graph(self):
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(self.assign_op)
 
-    def get_curr_Q_action(self, img, flow, sensor, motor):
+    def get_curr_Q_action(self, img, flow, motor):
         fd = {
             self.imgC: np.expand_dims(img, axis=0),
             self.floC: np.expand_dims(flow, axis=0),
-            self.senC: np.expand_dims(sensor, axis=0),
             self.motC: np.expand_dims(motor, axis=0)
         }
         Q_vals = self.sess.run(self.curr_pred, feed_dict=fd)
@@ -106,10 +103,11 @@ class DQN:
     def load_memory_from_file(self, file):
         with open(sys.argv[1], 'rb') as f:
             counter = 0
-            while True: 
+            while True:
                 try:
                     frame, flow, tof, action = pickle.load(f)
-                    
+                except:
+                    pass
 
     def batch_update(self):
         idxs = np.random.choice(len(self.replay_memory),
@@ -121,9 +119,9 @@ class DQN:
         s_js, a_js, r_js, s_jp1s = zip(*mems)
         # Similarly, break the states into their individual components, and
         # create stacked np arrays for network input.
-        img_js, flow_js, sensor_js, motor_js = map(lambda ls:
+        img_js, flow_js, motor_js = map(lambda ls:
                 np.stack(ls), zip(*s_js))
-        img_jp1s, flow_jp1s, sensor_jp1s, motor_jp1s = map(lambda ls:
+        img_jp1s, flow_jp1s, motor_jp1s = map(lambda ls:
                 np.stack(ls), zip(*s_jp1s))
         a_js = np.concatenate(a_js)
         r_js = np.concatenate(r_js)
@@ -131,14 +129,12 @@ class DQN:
         fd = {
             self.imgC: img_js,
             self.floC: flow_js,
-            self.senC: sensor_js,
             self.motC: motor_js,
             self.imgT: img_jp1s,
             self.floT: flow_jp1s,
-            self.senT: sensor_jp1s,
             self.motT: motor_jp1s,
-            self.a_j: a_js[:],
-            self.r_j: r_js[:],
+            self.a_j: a_js,
+            self.r_j: r_js,
         }
 
         curr_loss, _ = self.sess.run([self.loss, self.train_op], feed_dict=fd)
