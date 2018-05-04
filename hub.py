@@ -5,6 +5,7 @@ import cPickle as pickle
 import signal
 import sys
 import time
+import hparams as h
 from request import request_action
 from drive import Driver
 from tof_thread import TofWorker
@@ -33,10 +34,6 @@ def signal_handler(signal, frame):
     print 'EXITING'
     sys.exit(0)
 
-
-framerate = 15
-width, height = 160, 120
-
 if __name__ == '__main__':
     ########################## START SIGNAL HANDLER ##########################
     signal.signal(signal.SIGINT, signal_handler)
@@ -53,8 +50,8 @@ if __name__ == '__main__':
     functions_to_call_on_exit.append(("Closing servod process", driver.close))
 
     ############################# INIT THE CAMERA #############################
-    camera = picamera.PiCamera(framerate=40)
-    camera.resolution = (width, height)
+    camera = picamera.PiCamera(framerate=h.FRAMERATE)
+    camera.resolution = (h.IMG_WIDTH, h.IMG_HEIGHT)
     frame = FrameAnalyzer(camera)
     flow = FlowAnalyzer(camera)
 
@@ -75,7 +72,6 @@ if __name__ == '__main__':
     time.sleep(5)
     print('HERE WE GO')
 
-    frequency = 10.
     action = None
     while True:
         start = time.time()
@@ -84,6 +80,6 @@ if __name__ == '__main__':
         if action is not None: driver.move(*action)
         # delay to keep the loop frequency constant
         elapsed = time.time() - start
-        delay = 1./frequency - elapsed
+        delay = 1./h.FREQUENCY - elapsed
         if delay > 1e-4: camera.wait_recording(delay)
         else: print 1./elapsed
