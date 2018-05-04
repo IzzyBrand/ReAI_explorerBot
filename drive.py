@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import util
 
 class Servo:
 	def __init__(self, pins):
@@ -40,6 +41,8 @@ class Driver:
 		self.m2 = self.mid + speed + turn
 		self.servo.multi_write([self.m1, self.m2])
 
+
+
 	def dmotor(self, m1, m2):
 		''' Delta the motor speeds by the specified amounts '''
 		self.m1 += m1
@@ -51,10 +54,8 @@ class Driver:
 	def stop(self):
 		self.move(0,0)
 
-	def dfb(self,speed):
-		self.m1 -= speed 
-		self.m2 += speed
-		self.servo.multi_write([self.m1, self.m2])
+	def act(self, action):
+		self.dmotor(*util.action_to_motor(action))
 
 	def close(self):
 		self.stop()

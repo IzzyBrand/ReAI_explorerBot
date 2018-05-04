@@ -36,13 +36,13 @@ def get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1):
 # action/motor conversion
 ###############################################################################
 # generate the arrays for indexing action -> motor output
-m1, m2 = np.meshgrid(hp.MOTOR_VALS, hp.MOTOR_VALS)
-m1 = np.ravel(m1) 
-m2 = np.ravel(m2)
+m1_deltas, m2_deltas = np.meshgrid(hp.MOTOR_VALS, hp.MOTOR_VALS)
+m1_deltas = np.ravel(m1_deltas) 
+m2_deltas = np.ravel(m2_deltas)
 
 # gets the motor output for the action
 def action_to_motor(action):
-	return m1[action], m2[action]
+	return np.array((m1_deltas[action], m2_deltas[action]))
 
 def motor_to_action(dm1,dm2):
-	return np.argmax(np.logical_and((m1 == dm1), (m2 == dm2)))
+	return np.argmax(np.logical_and((m1_deltas == dm1), (m2_deltas == dm2)))

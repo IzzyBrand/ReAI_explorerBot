@@ -101,7 +101,7 @@ if __name__ == '__main__':
                        * max_motor_delta
             action = util.motor_to_action(dm1,dm2)
             print action, dm1, dm2
-            driver.dmotor(dm1, dm2)
+            driver.act(action)
             # each x_j should be a tuple of (frame, flow, motor, action, tof)
             x_j = (frame.data, flow.data, (driver.m1, driver.m2), action, dists)
             pickle.dump(x_j, f)

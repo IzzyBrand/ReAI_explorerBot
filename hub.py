@@ -9,6 +9,7 @@ import hparams as h
 from request import request_action
 from drive import Driver
 from tof_thread import TofWorker
+from copy import deepcopy
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self):
@@ -73,11 +74,22 @@ if __name__ == '__main__':
     print('HERE WE GO')
 
     action = None
+    prev_state = None
+    prev_tof = None
     while True:
         start = time.time()
-        # send data back to the DQN to get the next action
-        action = request_action("http://138.16.161.77:5000", (frame.data, flow.data, worker.tof_array, action))
-        if action is not None: driver.move(*action)
+
+        motors = (np.array((driver.m1, driver.m2)) - 1000.) / 500.
+        state = (frame.data, flow.data, motors)
+        tof = deepcopy(worker.tof_array)
+        prev_reward = util.get_reward(prev_state, action, state, prev_tof, tof) if prev_tof is not None else None
+        action = request_action("http://138.16.161.77:5000",  state, prev_reward)
+
+        if action is not None: driver.act(action)
+
+        prev_state = state
+        prev_tof = tof
+
         # delay to keep the loop frequency constant
         elapsed = time.time() - start
         delay = 1./h.FREQUENCY - elapsed
