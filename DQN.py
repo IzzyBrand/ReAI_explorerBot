@@ -27,6 +27,9 @@ class DQN:
         # Reward received at step J
         self.r_j = tf.placeholder(tf.float32, [None])
 
+        self.stored_state = None
+        self.stored_action = None
+
         self.loss = self.build_loss()
 
         self.train_op = tf.train.GradientDescentOptimizer(
@@ -121,7 +124,7 @@ class DQN:
             x_j = None
             x_jp1 = None
             # each x_j should be a tuple of (frame, flow, motor, action, tof)
-            while True: 
+            while True:
                 try:
                     x_j = x_jp1
                     x_jp1 = pickle.load(f)
