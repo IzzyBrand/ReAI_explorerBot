@@ -73,22 +73,26 @@ if __name__ == '__main__':
     time.sleep(5)
     print('HERE WE GO')
 
-    action = None
-    prev_state = None
-    prev_tof = None
+    a_j = None
+    s_j = None
+    tof_j = None
     while True:
         start = time.time()
-
+        # we're now in state j+1, called s_jp1
         motors = driver.get_motor()
-        state = (frame.data, flow.data, motors)
-        tof = deepcopy(worker.tof_array)
-        prev_reward = util.get_reward(prev_state, action, state, prev_tof, tof) if prev_tof is not None else None
-        action = request_action("http://138.16.161.77:5000",  state, prev_reward)
-
-        if action is not None: driver.act(action)
-
-        prev_state = state
-        prev_tof = tof
+        s_jp1 = (frame.data, flow.data, motors)
+        tof_jp1 = deepcopy(worker.tof_array)
+        # so we can calculate the reward, (s_j, a_j, s_jp1) -> r_j
+        r_j = None if tof_j is None else \
+              util.get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1)
+        # and request an action for s_jp1 -> a_jp1
+        # we also send back the previous reward to be used in experience replay
+        a_jp1 = request_action(h.DQN_URL,  s_jp1, r_j)
+        if a_jp1 is not None: driver.act(a_jp1)
+        # once we've taken that action, move ahead a timestep
+        s_j = s_jp1
+        a_j = a_jp1
+        tof_j = tof_jp1
 
         # delay to keep the loop frequency constant
         elapsed = time.time() - start
