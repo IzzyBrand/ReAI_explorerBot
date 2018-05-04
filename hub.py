@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     ############################# INIT THE CAMERA #############################
     camera = picamera.PiCamera(framerate=h.FRAMERATE)
-    camera.resolution = (h.IMG_HEIGHT, h.IMG_WIDTH)
+    camera.resolution = (h.IMG_WIDTH, h.IMG_HEIGHT)
     frame = FrameAnalyzer(camera)
     flow = FlowAnalyzer(camera)
 
