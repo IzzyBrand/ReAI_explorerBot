@@ -79,7 +79,7 @@ if __name__ == '__main__':
     while True:
         start = time.time()
 
-        motors = (np.array((driver.m1, driver.m2)) - 1000.) / 500.
+        motors = driver.get_motor()
         state = (frame.data, flow.data, motors)
         tof = deepcopy(worker.tof_array)
         prev_reward = util.get_reward(prev_state, action, state, prev_tof, tof) if prev_tof is not None else None
