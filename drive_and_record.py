@@ -9,6 +9,7 @@ from request import request_action
 from drive import Driver
 from tof_thread import TofWorker
 import util
+import hparams as h
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self):
@@ -16,7 +17,6 @@ class FrameAnalyzer(picamera.array.PiRGBAnalysis):
 
     def analyse(self, array):
         self.data = array
-
 
 class FlowAnalyzer(picamera.array.PiMotionAnalysis):
     def setup(self):
@@ -56,8 +56,12 @@ if __name__ == '__main__':
     ############################# INIT THE DRIVER #############################
     driver = Driver(12,18)
     functions_to_call_on_exit.append(("Closing servod process", driver.close))
+    # array of weights to generate desired speed and turn from tof_array
     tof_drive_weights = np.array([[ 1.0,  1.5, 1.5, 1.0],
                                   [-1.5, -0.5, 0.5, 1.5]])
+    # array of weight to generate desired motor1 and motor2 speeds
+    direct_drive_weights = np.array([[-2.5, -2. , -1. ,  0.5],
+                                     [-0.5,  1. ,  2. ,  2.5]])
 
     ############################# INIT THE CAMERA #############################
     camera = picamera.PiCamera(framerate=h.FRAMERATE)
@@ -83,15 +87,21 @@ if __name__ == '__main__':
     print('HERE WE GO')
 
     frequency = 20.
-    duration = 300
+    duration = 60
+    max_motor_delta = h.MOTOR_VALS[-1]
     timer_start = time.time()
     while time.time() - timer_start < duration:
         start = time.time()
         dists = worker.tof_array
         if dists is not None:
-            action = 4 # TODO, generate the action from the dists
-            m1, m2 = util.action_to_motor(action)
-            driver.dmotor(m1, m2)
+            old_policy = np.matmul(direct_drive_weights, dists) * 50. + 1500 
+            desired_delta = old_policy - np.array((driver.m1, driver.m2))
+            dm1, dm2 = np.sign(desired_delta) \
+                       * (np.abs(desired_delta) > max_motor_delta) \
+                       * max_motor_delta
+            action = util.motor_to_action(dm1,dm2)
+            print action, dm1, dm2
+            driver.dmotor(dm1, dm2)
             # each x_j should be a tuple of (frame, flow, motor, action, tof)
             x_j = (frame.data, flow.data, (driver.m1, driver.m2), action, dists)
             pickle.dump(x_j, f)

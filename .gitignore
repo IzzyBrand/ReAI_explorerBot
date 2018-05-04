@@ -2,3 +2,9 @@
 sftp-config.json
 .DS_Store
 *.pkl
+*.swp
+*.swo
+*.o
+*.a
+*.so
+tof_test

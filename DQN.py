@@ -4,6 +4,8 @@ Should run on Josh's machine.
 import tensorflow as tf
 import hparams as hp
 import numpy as np
+import sys
+import cPickle as pickle
 
 from collections import deque
 
@@ -42,6 +44,18 @@ class DQN:
         self.sess = tf.Session()
         self.init_graph()
 
+        self.merged = tf.summary.merge_all()
+
+        logdirstring = "logs/log"
+        for x in dir(hp):
+            if x.isupper():
+                logdirstring += "_"
+                # logdirstring += str(x)
+                # logdirstring += "-"
+                logdirstring += str(getattr(hp, x))
+        logdirstring += "/"
+        self.writer = tf.summary.FileWriter(logdirstring, self.sess.graph)
+
     def build_loss(self):
         y_j = self.r_j + hp.DISCOUNT_FACTOR * tf.reduce_max(self.target_pred,
                 axis=1)
@@ -50,7 +64,9 @@ class DQN:
         indices = tf.concat([arange, a_j], 1)
         indices = tf.split(indices, 1, axis=0)
         curr_Q_vals = tf.reshape(tf.gather_nd(self.curr_pred, indices), [-1])
-        return tf.reduce_mean((y_j - curr_Q_vals) ** 2)
+        loss = tf.reduce_mean((y_j - curr_Q_vals) ** 2)
+        tf.summary.scalar('loss', loss)
+        return loss
 
     def build_assign(self, copy_to, copy_from):
         to_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
@@ -136,11 +152,12 @@ class DQN:
                         s_jp1   = x_jp1[:3]
                         tof_jp1 = x_jp1[4]
                         r_j = util.get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1)
-                        self.add_memory(s_j, a_j, r_j, s_jp1)
+                        self.add_memory((s_j, a_j, r_j, s_jp1))
                 except EOFError:
                     break
+            print 'Added {} memories to memory.'.format(count)
 
-    def batch_update(self):
+    def batch_update(self, global_step):
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
@@ -168,11 +185,10 @@ class DQN:
             self.r_j: r_js,
         }
 
-        curr_loss, _ = self.sess.run([self.loss, self.train_op], feed_dict=fd)
+        summary, curr_loss, _ = self.sess.run([self.merged, self.loss, self.train_op], feed_dict=fd)
         print 'Current loss: ' + str(curr_loss)
 
-
-
+        self.writer.add_summary(summary, global_step)
 
 
 """
@@ -193,7 +209,8 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    d = DQN()
-    for i in xrange(1050):
-        d.add_memory(util.get_random_mem())
-    d.batch_update()
+    d = DQN(sys.argv[1:])
+    # for i in xrange(1050):
+    #     d.add_memory(util.get_random_mem())
+    for i in xrange(20):
+        d.batch_update(i)

@@ -27,7 +27,7 @@ class FlowAnalyzer(picamera.array.PiMotionAnalysis):
 
     def analyse(self, array):
         x = array['x']
-        y = array['x']
+        y = array['y']
         pickle.dump(array, self.file)
         self.count += 1
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
                 camera.start_recording("/dev/null", format='h264', splitter_port=1, motion_output=flow_analyzer)
                 camera.start_recording(frame_analyzer, format='bgr', splitter_port=2)
                  # nonblocking wait
-                camera.wait_recording(30)
+                camera.wait_recording(5)
 
                 camera.stop_recording(splitter_port=1)  # stop recording both the flow 
                 camera.stop_recording(splitter_port=2)  # and the images
