@@ -8,3 +8,4 @@ sftp-config.json
 *.a
 *.so
 tof_test
+logs/
