@@ -1,15 +1,15 @@
 import picamera
 import picamera.array
 import numpy as np
-import cPickle as pickle
 import signal
 import sys
 import time
 import hparams as h
-from request import request_action
+from request import request_action, batch_update
 from drive import Driver
 from tof_thread import TofWorker
 from copy import deepcopy
+import util
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self):
@@ -72,14 +72,14 @@ if __name__ == '__main__':
     print('Giving all the things a moment to boot up')
     time.sleep(5)
     print('HERE WE GO')
-
+    step_count = 0
     a_j = None
     s_j = None
     tof_j = None
     while True:
         start = time.time()
         # we're now in state j+1, called s_jp1
-        motors = driver.get_motor()
+        motors = deepcopy(driver.m)
         s_jp1 = (frame.data, flow.data, motors)
         tof_jp1 = deepcopy(worker.tof_array)
         # so we can calculate the reward, (s_j, a_j, s_jp1) -> r_j
@@ -93,9 +93,13 @@ if __name__ == '__main__':
         s_j = s_jp1
         a_j = a_jp1
         tof_j = tof_jp1
+        if r_j is not None:
+            print "R: {:05.3f}".format(float(r_j)), "\t A: {}\tMotors: {}".format(a_jp1, motors)
+        batch_update(h.DQN_URL, step_count)
 
         # delay to keep the loop frequency constant
         elapsed = time.time() - start
         delay = 1./h.FREQUENCY - elapsed
         if delay > 1e-4: camera.wait_recording(delay)
-        else: print 1./elapsed
+        # else: print 1./elapsed
+        step_count += 1
