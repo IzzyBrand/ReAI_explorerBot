@@ -19,7 +19,7 @@ def get_random_mem():
 #  reward functions
 ###############################################################################
 def motor_reward(motors):
-	motors = (np.array(motors)-1000)/500.
+	#motors = (np.array(motors)-1000)/500.
 	motors[0] = -motors[0]
 	direction = ((motors < 0).any() * 2) - 1
 	return np.abs(np.prod(motors)) * direction
@@ -30,7 +30,7 @@ def tof_reward(tof_array):
 def get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1):
 	_,_,motors = s_jp1
 	alpha = 0.75
-	return alpha * tof_reward(tof_jp1) + (1-alpha) * motor_reward(motors)
+	return alpha * tof_reward(tof_jp1) + (1.-alpha) * motor_reward(motors)
 	
 ###############################################################################
 # action/motor conversion

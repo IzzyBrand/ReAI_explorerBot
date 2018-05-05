@@ -30,22 +30,22 @@ class Servo:
 
 class Driver:
 	def __init__(self, m1,m2):
-		self.servo = Servo([m1,m2])
-		self.mid = 1500
-		self.m = np.array([self.mid, self.mid])
+	    self.servo = Servo([m1,m2])
+	    self.mid = 1500
+	    self.m = np.array([self.mid, self.mid])
 
 	def move(self, speed, turn):
-		''' Move forward at `speed`, and rotate `turn`'''
-		self.m = np.array([-speed, speed]) + self.mid + self.turn
-		self.servo.multi_write([self.m])
+	    ''' Move forward at `speed`, and rotate `turn`'''
+	    self.m = np.array([-speed, speed]) + self.mid + turn
+	    self.servo.multi_write([self.m])
 
 	def stop(self):
-		self.move(0,0)
+            self.move(0,0)
 
 	def dmotor(self, d):
-		''' Delta the motor speeds by the specified amounts '''
-        self.m = np.clip(self.m + d, 1000, 2000)
-		self.servo.multi_write(self.m)
+	    ''' Delta the motor speeds by the specified amounts '''
+            self.m = np.clip(self.m + d, 1000, 2000)
+	    self.servo.multi_write(self.m)
 
 	def get_motor(self):
 		''' get the motor speeds normalized -1 to 1 '''
