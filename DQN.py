@@ -10,6 +10,7 @@ import cPickle as pickle
 from collections import deque
 
 import util
+import time
 
 class DQN:
     def __init__(self, mem_files = [], restore_path = None, save_path = "tmp/model.ckpt"):
@@ -51,12 +52,10 @@ class DQN:
 
         self.merged = tf.summary.merge_all()
 
-        logdirstring = "logs/log"
+        logdirstring = "logs/log" + str(int(time.time()))
         for x in dir(hp):
             if x.isupper():
                 logdirstring += "_"
-                # logdirstring += str(x)
-                # logdirstring += "-"
                 logdirstring += str(getattr(hp, x))
         logdirstring += "/"
         self.writer = tf.summary.FileWriter(logdirstring, self.sess.graph)
@@ -197,11 +196,11 @@ class DQN:
         }
 
         summary, curr_loss, _ = self.sess.run([self.merged, self.loss, self.train_op], feed_dict=fd)
-        print 'Current loss: ' + str(curr_loss)
+        # print 'Current loss: ' + str(curr_loss)
 
         self.writer.add_summary(summary, global_step)
-        print("Saved a model at " + str(self.save_path))
-        self.save_path = self.saver.save(self.sess, self.save_path)
+        # print("Saved a model at " + str(self.save_path))
+        # self.save_path = self.saver.save(self.sess, self.save_path)
 
     def update_target_Q(self):
         self.sess.run(self.assign_op)
@@ -230,7 +229,7 @@ if __name__ == '__main__':
     # for i in xrange(1050):
     #     d.add_memory(util.get_random_mem())
     for i in xrange(2000):
-        print i
         d.batch_update(i)
         if i % 100 == 0:
+            print i
             d.update_target_Q()
