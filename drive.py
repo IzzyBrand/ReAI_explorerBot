@@ -32,30 +32,27 @@ class Driver:
 	def __init__(self, m1,m2):
 		self.servo = Servo([m1,m2])
 		self.mid = 1500
-		self.m1 = self.mid
-		self.m2 = self.mid
+		self.m = np.array([self.mid, self.mid])
 
 	def move(self, speed, turn):
 		''' Move forward at `speed`, and rotate `turn`'''
-		self.m1 = self.mid - speed + turn
-		self.m2 = self.mid + speed + turn
-		self.servo.multi_write([self.m1, self.m2])
-
-
-
-	def dmotor(self, m1, m2):
-		''' Delta the motor speeds by the specified amounts '''
-		self.m1 += m1
-		self.m2 += m2
-        self.m1 = np.clip(self.m1, 1000,2000)
-        self.m2 = np.clip(self.m2, 1000,2000)
-		self.servo.multi_write([self.m1, self.m2])
+		self.m = np.array([-speed, speed]) + self.mid + self.turn
+		self.servo.multi_write([self.m])
 
 	def stop(self):
 		self.move(0,0)
 
+	def dmotor(self, d):
+		''' Delta the motor speeds by the specified amounts '''
+        self.m = np.clip(self.m + d, 1000, 2000)
+		self.servo.multi_write(self.m)
+
+	def get_motor(self):
+		''' get the motor speeds normalized -1 to 1 '''
+		return (self.m - 1000)/500.
+
 	def act(self, action):
-		self.dmotor(*util.action_to_motor(action))
+		self.dmotor(util.action_to_motor(action))
 
 	def close(self):
 		self.stop()

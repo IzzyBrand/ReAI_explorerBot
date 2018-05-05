@@ -17,23 +17,28 @@ class DQN:
         for f in mem_files: self.add_file_to_memory(f)
         with tf.variable_scope('curr_Q'):
             # Gets input placeholders and net outputs for current Q net
-            self.imgC, self.floC, self.motC, self.curr_pred = (
-                    self.build_Q_net(trainable=True))
+            self.imgC, self.floC, self.motC, self.curr_pred = \
+                    self.build_Q_net(trainable=True)
         with tf.variable_scope('target_Q'):
             # Gets input placeholders and net outputs for target Q net
-            self.imgT, self.floT, self.motT, self.target_pred = (
-                    self.build_Q_net(trainable=False))
+            self.imgT, self.floT, self.motT, self.target_pred = \
+                    self.build_Q_net(trainable=False)
 
         # Action taken at step J
         self.a_j = tf.placeholder(tf.int32, [None])
         # Reward received at step J
         self.r_j = tf.placeholder(tf.float32, [None])
 
+        # stores the previous state and action so they can be added to the
+        # memory once we have received the reward (in the flask app)
         self.stored_state = None
         self.stored_action = None
 
         self.loss = self.build_loss()
 
+        # Note: changing this to AdamOptimizer breaks the assertion in
+        # build assign because the optimizer stores a lot of global
+        # variables to handle momentum
         self.train_op = tf.train.GradientDescentOptimizer(
                 hp.LEARNING_RATE).minimize(self.loss)
 
@@ -57,14 +62,14 @@ class DQN:
         self.writer = tf.summary.FileWriter(logdirstring, self.sess.graph)
 
     def build_loss(self):
-        y_j = self.r_j + hp.DISCOUNT_FACTOR * tf.reduce_max(self.target_pred,
-                axis=1)
-        arange = tf.expand_dims(tf.range(tf.shape(self.a_j)[0]), 1)
-        a_j = tf.expand_dims(self.a_j, 1)
-        indices = tf.concat([arange, a_j], 1)
-        indices = tf.split(indices, 1, axis=0)
+        y_j         = self.r_j + hp.DISCOUNT_FACTOR \
+                    * tf.reduce_max(self.target_pred, axis=1)
+        arange      = tf.expand_dims(tf.range(tf.shape(self.a_j)[0]), 1)
+        a_j         = tf.expand_dims(self.a_j, 1)
+        indices     = tf.concat([arange, a_j], 1)
+        indices     = tf.split(indices, 1, axis=0)
         curr_Q_vals = tf.reshape(tf.gather_nd(self.curr_pred, indices), [-1])
-        loss = tf.reduce_mean((y_j - curr_Q_vals) ** 2)
+        loss        = tf.reduce_mean((y_j - curr_Q_vals) ** 2)
         tf.summary.scalar('loss', loss)
         return loss
 
@@ -79,12 +84,12 @@ class DQN:
             ops.append(tf.assign(to_vars[i], from_vars[i]))
         return tf.group(*ops)
 
-    def apply_convolution(self, input, output_depth, filter_size, trainable=None):
-        input = tf.layers.conv2d(input, output_depth, filter_size,
+    def apply_convolution(self, logits, output_depth, filter_size, trainable=None):
+        logits = tf.layers.conv2d(logits, output_depth, filter_size,
                 trainable=trainable)
-        input = tf.layers.batch_normalization(input, trainable=trainable)
-        input = tf.nn.relu(input)
-        return input
+        # logits = tf.layers.batch_normalization(logits, trainable=trainable)
+        logits = tf.nn.relu(logits)
+        return logits
 
     def build_Q_net(self, trainable=True):
         img_input = tf.placeholder(tf.float32,
@@ -172,18 +177,15 @@ class DQN:
         img_jp1s, flow_jp1s, motor_jp1s = map(lambda ls:
                 np.stack(ls), zip(*s_jp1s))
 
-        #a_js = np.concatenate(a_js)
-        #r_js = np.concatenate(r_js)
-
         fd = {
             self.imgC: img_js,
-            self.floC: flow_js,
+            self.floC: np.stack((flow_js['x'],flow_js['y'], flow_js['sad']), axis=3),
             self.motC: motor_js,
             self.imgT: img_jp1s,
-            self.floT: flow_jp1s,
+            self.floT: np.stack((flow_jp1s['x'],flow_jp1s['y'], flow_jp1s['sad']), axis=3),
             self.motT: motor_jp1s,
-            self.a_j: a_js,
-            self.r_j: r_js,
+            self.a_j:  np.array(a_js),
+            self.r_j:  np.array(r_js),
         }
 
         summary, curr_loss, _ = self.sess.run([self.merged, self.loss, self.train_op], feed_dict=fd)
