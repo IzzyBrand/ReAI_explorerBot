@@ -17,8 +17,10 @@ def request_action(url, state, reward):
     response = requests.post(url + "/request_action", data=encoded, headers=headers)
     return pickle.loads(response.content)
 
-def batch_update(url):
-    req = grequests.post(url + "/batch_update")
+def batch_update(url, step_count):
+    headers = {'content-type': 'text'}
+    req = grequests.post(url + "/batch_update", 
+        data=str(step_count), headers=headers)
     req.send()
 
 if __name__ == '__main__':

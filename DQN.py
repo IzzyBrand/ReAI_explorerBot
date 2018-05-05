@@ -199,6 +199,9 @@ class DQN:
 
         self.writer.add_summary(summary, global_step)
 
+        if global_step % hp.TARGET_Q_UPDATE_INTERVAL == 0:
+            self.update_target_Q()
+
     def update_target_Q(self):
         self.sess.run(self.assign_op)
 
