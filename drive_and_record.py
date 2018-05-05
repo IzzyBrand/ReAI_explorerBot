@@ -61,8 +61,8 @@ if __name__ == '__main__':
     tof_drive_weights = np.array([[ 1.0,  1.5, 1.5, 1.0],
                                   [-1.5, -0.5, 0.5, 1.5]])
     # array of weight to generate desired motor1 and motor2 speeds
-    direct_drive_weights = np.array([[-2.5, -2. , -1. ,  0.5],
-                                     [-0.5,  1. ,  2. ,  2.5]])
+    direct_drive_weights = np.array([[ 2.5,  2.,  1.,  -0.5],
+                                     [-0.5,  1.,  2.,  2.5]])
 
     ############################# INIT THE CAMERA #############################
     camera = picamera.PiCamera(framerate=h.FRAMERATE)
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     while time.time() - timer_start < duration:
         start = time.time()
         # we're now in state j+1, called s_jp1
-        motors = driver.get_motor()
+        motors = driver.m
         s_jp1 = (frame.data, flow.data, motors)
         # so we can calculate the reward, (s_j, a_j, s_jp1) -> r_j
         r_j = None if tof_j is None else \
@@ -110,7 +110,7 @@ if __name__ == '__main__':
             old_policy = np.matmul(direct_drive_weights, tof_jp1)
             desired_delta = old_policy - motors
             dm1, dm2 = np.sign(desired_delta) \
-                       * (np.abs(desired_delta * 500.) > max_motor_delta) \
+                       * (np.abs(desired_delta) > max_motor_delta) \
                        * max_motor_delta
             a_jp1 = util.motor_to_action(dm1,dm2)
 
