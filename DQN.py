@@ -135,6 +135,9 @@ class DQN:
         self.sess.run(self.assign_op)
 
     def get_curr_Q_action(self, img, flow, motor):
+        if np.random.random() < hp.EPS:
+            return np.random.randint(hp.ACTION_SPACE_SIZE)
+
         fd = {
             self.imgC: np.expand_dims(img, axis=0),
             self.floC: np.expand_dims(np.stack((flow['x'],flow['y'], flow['sad']), axis=2), axis=0),
