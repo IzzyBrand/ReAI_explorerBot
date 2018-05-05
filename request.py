@@ -12,7 +12,7 @@ def request_action(url, state, reward):
     """
     :param state: (img, flow, motor) tuple
     """
-    encoded = pickle.dumps((state, previous_reward))
+    encoded = pickle.dumps((state, reward))
     headers = {'content-type': 'text'}
     response = requests.post(url + "/request_action", data=encoded, headers=headers)
     return pickle.loads(response.content)
