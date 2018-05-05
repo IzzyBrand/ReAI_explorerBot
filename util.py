@@ -24,7 +24,7 @@ def motor_reward(motors):
 	return np.abs(np.prod(motors)) * direction
 
 def tof_reward(tof_array):
-	return np.min(tof_array)
+	return np.min(tof_array) * 2. - 1
 
 def get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1):
 	_,_,motors = s_jp1
