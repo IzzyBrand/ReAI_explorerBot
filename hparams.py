@@ -4,7 +4,7 @@ FREQUENCY = 20 # loop frequency of the controller
 FRAMERATE = 20 # framerate of the camera
 
 HISTORY_LEN = 1
-IMG_HEIGHT = 180
+IMG_HEIGHT = 160
 IMG_WIDTH = 240
 IMG_DEPTH = 3 * HISTORY_LEN # 3 color channels, 4 frame history
 
