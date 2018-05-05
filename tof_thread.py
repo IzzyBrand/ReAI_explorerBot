@@ -16,7 +16,7 @@ class TofWorker(Thread):
             raw_dists = None
             try:
                 raw_dists = self.tof_process.stdout.readline().strip()
-                self.tof_array = np.array([int(i) for i in raw_dists.split('\t')])/255. * 2. - 1.
+                self.tof_array = np.array([int(i) for i in raw_dists.split('\t')])/255.
             except:
                 if raw_dists is not None: print raw_dists
 

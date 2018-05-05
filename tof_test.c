@@ -31,7 +31,7 @@ int main(){
 		}
 		else {
 			printf("Init %x\n", addresses[i]);
-			set_scaling(handles[i],(i%3==0)+1);
+			set_scaling(handles[i],(i%3==0)*2+1);
 		}
 	}
 
