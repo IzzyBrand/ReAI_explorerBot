@@ -4,12 +4,14 @@ Should run on Josh's machine.
 from flask import Flask
 from flask import request
 import cPickle as pickle
+import sys
 
 from DQN import DQN
 
 app = Flask(__name__)
 
-model = DQN()
+fpaths = ['camTests/drivingFootage/240x180_20fps_60s_0.pkl']
+model = DQN(fpaths)
 
 @app.route('/request_action', methods=['POST'])
 def request_action():
@@ -25,6 +27,7 @@ def request_action():
 
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
+    print "Got request"
     model.batch_update()
     # http 204 no content
     return ('', 204)

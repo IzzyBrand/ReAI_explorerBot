@@ -29,14 +29,14 @@ class DQN:
         # Reward received at step J
         self.r_j = tf.placeholder(tf.float32, [None])
 
-        # stores the previous state and action so they can be added to the 
+        # stores the previous state and action so they can be added to the
         # memory once we have received the reward (in the flask app)
         self.stored_state = None
         self.stored_action = None
 
         self.loss = self.build_loss()
 
-        # Note: changing this to AdamOptimizer breaks the assertion in 
+        # Note: changing this to AdamOptimizer breaks the assertion in
         # build assign because the optimizer stores a lot of global
         # variables to handle momentum
         self.train_op = tf.train.GradientDescentOptimizer(
@@ -162,7 +162,7 @@ class DQN:
                     break
             print 'Added {} memories to memory.'.format(count)
 
-    def batch_update(self, global_step):
+    def batch_update(self):
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
