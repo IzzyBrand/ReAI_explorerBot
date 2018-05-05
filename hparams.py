@@ -22,11 +22,11 @@ MOTOR_VALS = np.array([-0.1,0,0.1]) # forward, nothing, backward for each motor
 ACTION_SPACE_SIZE = MOTOR_VALS.shape[0]**2
 
 DISCOUNT_FACTOR = 0.9
-LEARNING_RATE = 3e-7 # TODO: May want to decay by using a tf.Variable
-BATCH_SIZE = 10
-MEMORY_SIZE = 10000
+LEARNING_RATE = 0.5 # TODO: May want to decay by using a tf.Variable
+BATCH_SIZE = 100
+MEMORY_SIZE = 200
 TARGET_Q_UPDATE_INTERVAL = 200
-EPS=0.1
+EPS=0.2
 
 ########### NET PARAMS ###########
 IMG_CONV_LAYERS = 4
