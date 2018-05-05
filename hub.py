@@ -85,7 +85,7 @@ if __name__ == '__main__':
     a_j = None
     s_j = None
     tof_j = None
-    while True:
+    while not rospy.is_shutdown():
         start = time.time()
         # we're now in state j+1, called s_jp1
         motors = deepcopy(driver.m)
@@ -112,3 +112,5 @@ if __name__ == '__main__':
         if delay > 1e-4: camera.wait_recording(delay)
         # else: print 1./elapsed
         step_count += 1
+
+    signal_handler(0, 0)
