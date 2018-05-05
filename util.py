@@ -20,7 +20,7 @@ def get_random_mem():
 ###############################################################################
 def motor_reward(motors):
 	#motors = (np.array(motors)-1000)/500.
-	direction = ((motors < 0).any() * 2) - 1
+	direction = ((motors > 0).all() * 2) - 1
 	return np.abs(np.prod(motors)) * direction
 
 def tof_reward(tof_array):
