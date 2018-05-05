@@ -196,11 +196,8 @@ class DQN:
         }
 
         summary, curr_loss, _ = self.sess.run([self.merged, self.loss, self.train_op], feed_dict=fd)
-        # print 'Current loss: ' + str(curr_loss)
 
         self.writer.add_summary(summary, global_step)
-        # print("Saved a model at " + str(self.save_path))
-        # self.save_path = self.saver.save(self.sess, self.save_path)
 
     def update_target_Q(self):
         self.sess.run(self.assign_op)
@@ -233,3 +230,4 @@ if __name__ == '__main__':
         if i % 100 == 0:
             print i
             d.update_target_Q()
+    d.saver.save(d.saver.save(d.sess, d.save_path))
