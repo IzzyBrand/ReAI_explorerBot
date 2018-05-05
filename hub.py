@@ -10,6 +10,8 @@ from drive import Driver
 from tof_thread import TofWorker
 from copy import deepcopy
 import util
+import rospy
+from explorer_bot.msg import Lidars
 
 class FrameAnalyzer(picamera.array.PiRGBAnalysis):
     def setup(self):
@@ -35,16 +37,23 @@ def signal_handler(signal, frame):
     print 'EXITING'
     sys.exit(0)
 
+tof_array = None
+def tof_callback(data):
+    global tof_array
+    tof_array = data.ranges
+
 if __name__ == '__main__':
     ########################## START SIGNAL HANDLER ##########################
     signal.signal(signal.SIGINT, signal_handler)
 
     ########################### INIT THE TOF SENSOR ###########################
-    worker = TofWorker()
-    worker.daemon = True
-    worker.start()
-    functions_to_call_on_exit.append(("Closing TOF subrocess", worker.close))
-    functions_to_call_on_exit.append(("Joining TOF thread", worker.join))
+    # worker = TofWorker()
+    # worker.daemon = True
+    # worker.start()
+    # functions_to_call_on_exit.append(("Closing TOF subrocess", worker.close))
+    # functions_to_call_on_exit.append(("Joining TOF thread", worker.join))
+    rospy.init_node('hub')
+    rospy.Subscriber("/tof", Lidars, tof_callback)
 
     ############################# INIT THE DRIVER #############################
     driver = Driver(12,18)
@@ -81,7 +90,7 @@ if __name__ == '__main__':
         # we're now in state j+1, called s_jp1
         motors = deepcopy(driver.m)
         s_jp1 = (frame.data, flow.data, motors)
-        tof_jp1 = deepcopy(worker.tof_array)
+        tof_jp1 = deepcopy(tof_array)
         # so we can calculate the reward, (s_j, a_j, s_jp1) -> r_j
         r_j = None if tof_j is None else \
               util.get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1)
