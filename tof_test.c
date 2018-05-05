@@ -3,7 +3,7 @@
 #include <wiringPi.h>
 #include <unistd.h>
 
-// cc tof_test.c -o tof_test -lvl6180_pi  -lwiringPi
+// cc Wall tof_test.c -o tof_test -lvl6180_pi  -lwiringPi
 
 int main(){
 	setbuf(stdout, NULL);
