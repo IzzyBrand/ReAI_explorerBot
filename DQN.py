@@ -162,7 +162,7 @@ class DQN:
                     break
             print 'Added {} memories to memory.'.format(count)
 
-    def batch_update(self):
+    def batch_update(self, global_step):
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
@@ -193,6 +193,9 @@ class DQN:
 
         self.writer.add_summary(summary, global_step)
 
+    def update_target_Q(self):
+        self.sess.run(self.assign_op)
+
 
 """
 with tf.variable_scope('Q')
@@ -215,5 +218,8 @@ if __name__ == '__main__':
     d = DQN(sys.argv[1:])
     # for i in xrange(1050):
     #     d.add_memory(util.get_random_mem())
-    for i in xrange(20):
+    for i in xrange(2000):
+        print i
         d.batch_update(i)
+        if i % 100 == 0:
+            d.update_target_Q()
