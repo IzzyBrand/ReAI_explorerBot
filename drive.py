@@ -29,30 +29,29 @@ class Servo:
 		os.system("sudo killall servod")
 
 class Driver:
-	def __init__(self, m1,m2):
-		self.servo = Servo([m1,m2])
-		self.mid = 1500
-		self.m = np.array([self.mid, self.mid])
+	def __init__(self, m1_pin, m2_pin):
+	    self.servo = Servo([m1_pin, m2_pin])
+	    self.m = np.zeros(2)
+	    self.motor_dirs = np.array([-1.,1.])
+
+	def set_servos(self):
+		self.servo.multi_write(self.m * self.motor_dirs * 500. + 1500.)
 
 	def move(self, speed, turn):
-		''' Move forward at `speed`, and rotate `turn`'''
-		self.m = np.array([-speed, speed]) + self.mid + self.turn
-		self.servo.multi_write([self.m])
-
-	def stop(self):
-		self.move(0,0)
+	    ''' Move forward at `speed`, and rotate `turn`'''
+	    self.m = np.clip(np.array([-turn, turn]) + speed, -1., 1.)
+	    self.set_servos()
 
 	def dmotor(self, d):
-		''' Delta the motor speeds by the specified amounts '''
-        self.m = np.clip(self.m + d, 1000, 2000)
-		self.servo.multi_write(self.m)
-
-	def get_motor(self):
-		''' get the motor speeds normalized -1 to 1 '''
-		return (self.m - 1000)/500.
+	    ''' Delta the motor speeds by the specified amounts '''
+        self.m = np.clip(self.m + d, -1., 1.)
+	    self.set_servos()
 
 	def act(self, action):
 		self.dmotor(util.action_to_motor(action))
+
+	def stop(self):
+        self.move(0,0)
 
 	def close(self):
 		self.stop()
