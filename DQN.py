@@ -202,6 +202,9 @@ class DQN:
         # print("Saved a model at " + str(self.save_path))
         # self.save_path = self.saver.save(self.sess, self.save_path)
 
+        if global_step % hp.TARGET_Q_UPDATE_INTERVAL == 0:
+            self.update_target_Q()
+
     def update_target_Q(self):
         self.sess.run(self.assign_op)
 
