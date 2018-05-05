@@ -65,7 +65,7 @@ class DQN:
         self.saver = tf.train.Saver()
 
         if (restore_path is not None):
-            self.saver.restore(restore_path)
+            self.saver.restore(self.sess, restore_path)
             print("Restored model from " + str(restore_path))
 
     def build_loss(self):
@@ -137,7 +137,7 @@ class DQN:
     def get_curr_Q_action(self, img, flow, motor):
         fd = {
             self.imgC: np.expand_dims(img, axis=0),
-            self.floC: np.expand_dims(flow, axis=0),
+            self.floC: np.expand_dims(np.stack((flow['x'],flow['y'], flow['sad']), axis=2), axis=0),
             self.motC: np.expand_dims(motor, axis=0)
         }
         Q_vals = self.sess.run(self.curr_pred, feed_dict=fd)
@@ -170,6 +170,7 @@ class DQN:
             print 'Added {} memories to memory.'.format(count)
 
     def batch_update(self, global_step):
+        print("Batch Updating")
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
@@ -224,13 +225,11 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    d = DQN(sys.argv[1:])
+    d = DQN(sys.argv[1:], save_path="tmp/model.ckpt")
     print("Started a DQN")
-    # for i in xrange(1050):
-    #     d.add_memory(util.get_random_mem())
-    for i in xrange(2000):
+    for i in xrange(20000):
         d.batch_update(i)
         if i % 100 == 0:
             print i
             d.update_target_Q()
-    d.saver.save(d.saver.save(d.sess, d.save_path))
+    d.saver.save(d.sess, d.save_path)
