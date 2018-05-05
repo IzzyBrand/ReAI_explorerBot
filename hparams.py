@@ -26,6 +26,8 @@ LEARNING_RATE = 3e-7 # TODO: May want to decay by using a tf.Variable
 BATCH_SIZE = 10
 MEMORY_SIZE = 1000
 
+TARGET_Q_UPDATE_INTERVAL = 200
+
 ########### NET PARAMS ###########
 IMG_CONV_LAYERS = 4
 FLOW_CONV_LAYERS = 4

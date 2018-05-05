@@ -28,6 +28,7 @@ def request_action():
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
     print "Got request"
-    model.batch_update()
+    step = int(request.data)
+    model.batch_update(step)
     # http 204 no content
     return ('', 204)
