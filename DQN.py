@@ -12,7 +12,7 @@ from collections import deque
 import util
 
 class DQN:
-    def __init__(self, mem_files = []):
+    def __init__(self, mem_files = [], restore_path = None, save_path = "tmp/model.ckpt"):
         self.replay_memory = deque(maxlen=hp.MEMORY_SIZE)
         for f in mem_files: self.add_file_to_memory(f)
         with tf.variable_scope('curr_Q'):
@@ -60,6 +60,14 @@ class DQN:
                 logdirstring += str(getattr(hp, x))
         logdirstring += "/"
         self.writer = tf.summary.FileWriter(logdirstring, self.sess.graph)
+
+        self.save_path = save_path
+
+        self.saver = tf.train.Saver()
+
+        if (restore_path is not None):
+            self.saver.restore(restore_path)
+            print("Restored model from " + str(restore_path))
 
     def build_loss(self):
         y_j         = self.r_j + hp.DISCOUNT_FACTOR \
@@ -162,7 +170,7 @@ class DQN:
                     break
             print 'Added {} memories to memory.'.format(count)
 
-    def batch_update(self):
+    def batch_update(self, global_step):
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
@@ -192,6 +200,11 @@ class DQN:
         print 'Current loss: ' + str(curr_loss)
 
         self.writer.add_summary(summary, global_step)
+        print("Saved a model at " + str(self.save_path))
+        self.save_path = self.saver.save(self.sess, self.save_path)
+
+    def update_target_Q(self):
+        self.sess.run(self.assign_op)
 
 
 """
@@ -213,7 +226,11 @@ make sure that tf.assign isn't making the target variables trainable
 
 if __name__ == '__main__':
     d = DQN(sys.argv[1:])
+    print("Started a DQN")
     # for i in xrange(1050):
     #     d.add_memory(util.get_random_mem())
-    for i in xrange(20):
+    for i in xrange(2000):
+        print i
         d.batch_update(i)
+        if i % 100 == 0:
+            d.update_target_Q()
