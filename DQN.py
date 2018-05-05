@@ -13,7 +13,7 @@ import util
 import time
 
 class DQN:
-    def __init__(self, mem_files = [], restore_path = None, save_path = "tmp/model.ckpt"):
+    def __init__(self, mem_files = [], restore_path = None, save_path = "model/model.ckpt"):
         self.replay_memory = deque(maxlen=hp.MEMORY_SIZE)
         for f in mem_files: self.add_file_to_memory(f)
         with tf.variable_scope('curr_Q'):
@@ -170,7 +170,6 @@ class DQN:
             print 'Added {} memories to memory.'.format(count)
 
     def batch_update(self, global_step):
-        print("Batch Updating")
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
@@ -225,9 +224,9 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    d = DQN(sys.argv[1:], save_path="tmp/model.ckpt")
+    d = DQN(sys.argv[1:], save_path="model/model.ckpt")
     print("Started a DQN")
-    for i in xrange(20000):
+    for i in xrange(2000):
         d.batch_update(i)
         if i % 100 == 0:
             print i

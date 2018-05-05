@@ -11,7 +11,7 @@ from DQN import DQN
 app = Flask(__name__)
 
 fpaths = ['good_data/240x160_20fps_60s_0.pkl']
-model = DQN(fpaths, restore_path="tmp/model.ckpt")
+model = DQN(fpaths, restore_path="model/model.ckpt")
 global_step = 0
 
 @app.route('/request_action', methods=['POST'])
@@ -29,7 +29,7 @@ def request_action():
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
     print "Got request"
-    
+
     global global_step
     model.batch_update(global_step)
     global_step += 1
