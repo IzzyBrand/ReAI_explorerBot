@@ -2,11 +2,11 @@ import requests
 import grequests
 import cPickle as pickle
 import numpy as np
-
 import util
+import hparams as hp
+import sys
+import time
 
-REQUEST_URL = 'http://138.16.161.77:5000'
-REQUEST_URL = 'http://localhost:5000'
 
 def request_action(url, state, reward):
     """
@@ -24,5 +24,9 @@ def batch_update(url, step_count):
     req.send()
 
 if __name__ == '__main__':
-    #print request_action(REQUEST_URL, util.get_random_state())
-    batch_update(REQUEST_URL)
+    num_iters = int(sys.argv[1]) if len(sys.argv) > 1 else 100
+    print 'Sending {} batch requests to {}'.format(num_iters, hp.DQN_URL)
+    for i in range(num_iters):
+        print 'Requesting update', i
+        batch_update(hp.DQN_URL, i)
+        time.sleep(1./hp.FREQUENCY)
