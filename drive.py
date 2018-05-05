@@ -35,7 +35,7 @@ class Driver:
 	    self.motor_dirs = np.array([-1.,1.])
 
 	def set_servos(self):
-		self.servo.multi_write(self.m * self.motor_dirs * 500. + 1500.)
+	    self.servo.multi_write(self.m * self.motor_dirs * 500. + 1500.)
 
 	def move(self, speed, turn):
 	    ''' Move forward at `speed`, and rotate `turn`'''
@@ -44,18 +44,18 @@ class Driver:
 
 	def dmotor(self, d):
 	    ''' Delta the motor speeds by the specified amounts '''
-        self.m = np.clip(self.m + d, -1., 1.)
+            self.m = np.clip(self.m + d, -1., 1.)
 	    self.set_servos()
 
 	def act(self, action):
-		self.dmotor(util.action_to_motor(action))
+            self.dmotor(util.action_to_motor(action))
 
 	def stop(self):
-        self.move(0,0)
+            self.move(0,0)
 
 	def close(self):
-		self.stop()
-		self.servo.close()
+	    self.stop()
+	    self.servo.close()
 
 
 if __name__ == '__main__':
