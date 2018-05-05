@@ -19,9 +19,9 @@ def request_action(url, state, reward):
 
 def batch_update(url, step_count):
     headers = {'content-type': 'text'}
-    req = grequests.post(url + "/batch_update", 
+    req = requests.post(url + "/batch_update", 
         data=str(step_count), headers=headers)
-    req.send()
+    #req.send()
 
 if __name__ == '__main__':
     num_iters = int(sys.argv[1]) if len(sys.argv) > 1 else 100
