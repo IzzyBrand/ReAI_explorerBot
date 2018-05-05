@@ -157,7 +157,7 @@ class DQN:
                     break
             print 'Added {} memories to memory.'.format(count)
 
-    def batch_update(self, global_step):
+    def batch_update(self):
         idxs = np.random.choice(len(self.replay_memory),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
@@ -171,8 +171,9 @@ class DQN:
                 np.stack(ls), zip(*s_js))
         img_jp1s, flow_jp1s, motor_jp1s = map(lambda ls:
                 np.stack(ls), zip(*s_jp1s))
-        a_js = np.concatenate(a_js)
-        r_js = np.concatenate(r_js)
+
+        #a_js = np.concatenate(a_js)
+        #r_js = np.concatenate(r_js)
 
         fd = {
             self.imgC: img_js,
