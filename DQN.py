@@ -214,6 +214,7 @@ class DQN:
         if global_step % hp.TARGET_Q_UPDATE_INTERVAL == 0:
             self.update_target_Q()
         if global_step % 50 == 0:
+            print "SAVING YO"
             self.saver.save(self.sess, self.save_path)
         return curr_loss
 
@@ -254,9 +255,9 @@ make sure that tf.assign isn't making the target variables trainable
 
 if __name__ == '__main__':
     #d = DQN(sys.argv[1:], save_path="model/action_model.ckpt")
-    d = DQN(sys.argv[1:],save_path="model/fblr_model.ckpt")
+    d = DQN(sys.argv[1:],restore_path='model/fblr_model.ckpt', save_path="model/fblr_model.ckpt")
     print("Started a DQN")
-    for i in xrange(5001):
+    for i in xrange(10001):
         print d.batch_update(i)
         if i%100 ==0: d.saver.save(d.sess, d.save_path)
     sys.exit(0)
@@ -279,7 +280,3 @@ if __name__ == '__main__':
         d.sess.run(d.assign_op)
         print 'SAVING', filename
         d.saver.save(d.sess, d.save_path)
-
-
-
-
