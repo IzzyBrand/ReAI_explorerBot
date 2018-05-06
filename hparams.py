@@ -18,10 +18,10 @@ SENSOR_DIM = 4 * HISTORY_LEN
 ########### OTHER STUFF ###########
 DQN_URL = "http://agni:5000"
 
-MOTOR_VALS = np.array([[ 1.0,  1.0],
-					   [ 1.0,  0.0],
-					   [ 0.0,  1.0],
-					   [-0.5, -0.5]]) 
+MOTOR_VALS = np.array([[ 1.0,  1.0], # F
+					   [-0.5, -0.5], # B
+					   [ 1.0,  0.0], # L
+					   [ 0.0,  1.0]])# R
 
 ACTION_SPACE_SIZE = MOTOR_VALS.shape[0]
 

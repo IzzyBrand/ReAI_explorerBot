@@ -48,7 +48,8 @@ class Driver:
 	    self.set_servos()
 
 	def act(self, action):
-            self.dmotor(util.action_to_motor(action))
+            self.m = util.action_to_motor(action)
+            self.set_servos()
 
 	def stop(self):
             self.move(0,0)
