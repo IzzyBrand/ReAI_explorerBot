@@ -18,7 +18,7 @@ SENSOR_DIM = 4 * HISTORY_LEN
 ########### OTHER STUFF ###########
 DQN_URL = "http://agni:5000"
 
-MOTOR_VALS = np.array([-0.1,0,0.1]) # forward, nothing, backward for each motor
+MOTOR_VALS = np.array([-0.2,0,0.2]) # forward, nothing, backward for each motor
 ACTION_SPACE_SIZE = MOTOR_VALS.shape[0]**2
 
 DISCOUNT_FACTOR = 0.9

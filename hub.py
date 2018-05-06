@@ -102,8 +102,7 @@ if __name__ == '__main__':
         s_j = s_jp1
         a_j = a_jp1
         tof_j = tof_jp1
-        if r_j is not None:
-            print "R: {:05.3f}".format(float(r_j)), "\t A: {}\tMotors: {}".format(a_jp1, motors)
+        
         batch_update(h.DQN_URL, step_count)
 
         # delay to keep the loop frequency constant
@@ -111,6 +110,8 @@ if __name__ == '__main__':
         delay = 1./h.FREQUENCY - elapsed
         if delay > 1e-4: camera.wait_recording(delay)
         # else: print 1./elapsed
+        if r_j is not None:
+            print "{} R: {:05.3f}\t A: {}\tT: {}\tMotors: {}".format(step_count, float(r_j), a_jp1, elapsed, motors)
         step_count += 1
 
     signal_handler(0, 0)
