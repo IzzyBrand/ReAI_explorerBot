@@ -36,12 +36,16 @@ class DQN:
         self.stored_action = None
 
         self.loss = self.build_loss()
+        self.action_ph, self.action_loss = self.build_action_loss()
 
         # Note: changing this to AdamOptimizer breaks the assertion in
         # build assign because the optimizer stores a lot of global
         # variables to handle momentum
         self.train_op = tf.train.GradientDescentOptimizer(
                 hp.LEARNING_RATE).minimize(self.loss)
+
+        self.train_action_op = tf.train.AdamOptimizer(
+                hp.ACTION_TRAIN_LR).minimize(self.action_loss)
 
         # Operation used to update the target net to the parameters of the
         # current net.
@@ -90,6 +94,11 @@ class DQN:
         for i in xrange(len(from_vars)):
             ops.append(tf.assign(to_vars[i], from_vars[i]))
         return tf.group(*ops)
+
+    def build_action_loss(self):
+        action = tf.placeholder(tf.int32, [None, hp.ACTION_SPACE_SIZE])
+        x_ent = tf.nn.softmax_cross_entropy_with_logits(logits=self.curr_pred, labels=action)
+        return action, tf.reduce_mean(x_ent)
 
     def apply_convolution(self, logits, output_depth, filter_size, trainable=None):
         logits = tf.layers.conv2d(logits, output_depth, filter_size,
