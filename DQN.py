@@ -232,7 +232,7 @@ class DQN:
         }
 
         curr_loss, _ = self.sess.run([self.action_loss, self.train_action_op], feed_dict=fd)
-        print curr_loss
+        return curr_loss
 
 
 
@@ -264,6 +264,7 @@ if __name__ == '__main__':
     d.sess.run(d.assign_op)
     batch = []
     counter = 0
+    step = 0
     for loop_num in range(100):
         for filename in sys.argv[1:]:
             with open(filename, 'rb') as f:
@@ -274,9 +275,10 @@ if __name__ == '__main__':
                     except:
                         break
                     if counter == hp.BATCH_SIZE:
-                        d.train_action(batch)
+                        print step, d.train_action(batch)
                         batch = []
                         counter = 0
+                        step += 1
         d.sess.run(d.assign_op)
         print 'SAVING', filename
         d.saver.save(d.sess, d.save_path)

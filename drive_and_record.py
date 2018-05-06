@@ -90,7 +90,7 @@ if __name__ == '__main__':
     time.sleep(5)
     print('HERE WE GO')
 
-    duration = 60
+    duration = 300
     max_motor_delta = h.MOTOR_VALS[-1]
     timer_start = time.time()
     a_j   = None
@@ -110,8 +110,8 @@ if __name__ == '__main__':
         if tof_jp1 is not None:
             
             if (tof_jp1 == 1).all(): a_jp1 = 0
-            elif: (tof_jp1[1:3] < 1).all(): a_jp1 = 1
-            elif: (tof_jp1[3] < 1): a_jp1 = 2
+            elif (tof_jp1[1:3] < 1).all(): a_jp1 = 1
+            elif (tof_jp1[3] < 1): a_jp1 = 2
             else: a_jp1 = 3
 
             # each x_j should be a tuple of (frame, flow, motor, action, tof)
