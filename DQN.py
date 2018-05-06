@@ -204,6 +204,8 @@ class DQN:
 
         if global_step % hp.TARGET_Q_UPDATE_INTERVAL == 0:
             self.update_target_Q()
+        if global_step % 50 == 0:
+            self.saver.save(self.sess, self.save_path)
 
     def update_target_Q(self):
         self.sess.run(self.assign_op)
@@ -227,9 +229,9 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    d = DQN(sys.argv[1:], save_path="model/model.ckpt")
+    d = DQN(sys.argv[1:], save_path="irl/model.ckpt")
     print("Started a DQN")
-    for i in xrange(10000):
+    for i in xrange(50000):
         d.batch_update(i)
         if i % 100 == 0:
             print i
