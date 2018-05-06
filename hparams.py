@@ -18,8 +18,12 @@ SENSOR_DIM = 4 * HISTORY_LEN
 ########### OTHER STUFF ###########
 DQN_URL = "http://agni:5000"
 
-MOTOR_VALS = np.array([-0.2,0,0.2]) # forward, nothing, backward for each motor
-ACTION_SPACE_SIZE = MOTOR_VALS.shape[0]**2
+MOTOR_VALS = np.array([[ 1.0,  1.0],
+					   [ 1.0,  0.0],
+					   [ 0.0,  1.0],
+					   [-0.5, -0.5]]) 
+
+ACTION_SPACE_SIZE = MOTOR_VALS.shape[0]
 
 DISCOUNT_FACTOR = 0.95
 LEARNING_RATE = 3e-5 # TODO: May want to decay by using a tf.Variable
