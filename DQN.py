@@ -44,7 +44,7 @@ class DQN:
         self.train_op = tf.train.GradientDescentOptimizer(
                 hp.LEARNING_RATE).minimize(self.loss)
 
-        self.train_action_op = tf.train.AdamOptimizer(
+        self.train_action_op = tf.train.GradientDescentOptimizer(
                 hp.ACTION_TRAIN_LR).minimize(self.action_loss)
 
         # Operation used to update the target net to the parameters of the
@@ -103,7 +103,7 @@ class DQN:
     def apply_convolution(self, logits, output_depth, filter_size, trainable=None):
         logits = tf.layers.conv2d(logits, output_depth, filter_size,
                 trainable=trainable)
-        # logits = tf.layers.batch_normalization(logits, trainable=trainable)
+        logits = tf.layers.batch_normalization(logits, trainable=trainable)
         logits = tf.nn.relu(logits)
         return logits
 
@@ -215,18 +215,19 @@ class DQN:
             self.update_target_Q()
         if global_step % 50 == 0:
             self.saver.save(self.sess, self.save_path)
+        return curr_loss
 
     def update_target_Q(self):
         self.sess.run(self.assign_op)
 
     def train_action(self, batch):
-        img_js, flow_js, motor_js  a_js, _ = zip(*batch)
-
+        img_js, flow_js, motor_js,  a_js, _ = zip(*batch)
+        flow_js = np.stack(flow_js)
         fd = {
             self.imgC: np.stack(img_js),
             self.floC: np.stack((flow_js['x'],flow_js['y'], flow_js['sad']), axis=3),
             self.motC: np.stack(motor_js),
-            self.acton_ph = np.eye(hp.ACTION_SPACE_SIZE)[a_js]
+            self.action_ph:  np.eye(hp.ACTION_SPACE_SIZE)[np.array(a_js)]
         }
 
         curr_loss, _ = self.sess.run([self.action_loss, self.train_action_op], feed_dict=fd)
@@ -252,30 +253,31 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    d = DQN(sys.argv[1:], save_path="model/action_model.ckpt")
-    print("Started a DQN")
-    # for i in xrange(20000):
-    #     d.batch_update(i)
-    #     if i % 100 == 0:
-    #         print i
-    #         d.update_target_Q()
-    # d.saver.save(d.sess, d.save_path)
-
+    #d = DQN(sys.argv[1:], save_path="model/action_model.ckpt")
+    d = DQN(sys.argv[1:],restore_path="model/fblr_action_model.ckpt", save_path="model/fblr_action_model.ckpt")
+    # print("Started a DQN")
+    # for i in xrange(5001):
+    #     print d.batch_update(i)
+    #     if i%100 ==0: d.saver.save(d.sess, d.save_path)
+    # sys.exit(0)
+    d.sess.run(d.assign_op)
     batch = []
     counter = 0
-    for loop_num in range(10):
+    for loop_num in range(100):
         for filename in sys.argv[1:]:
             with open(filename, 'rb') as f:
                 while True:
                     try:
                         batch.append(pickle.load(f))
                         counter += 1
-                    except EOFError:
+                    except:
                         break
                     if counter == hp.BATCH_SIZE:
                         d.train_action(batch)
                         batch = []
-                        counter = []
+                        counter = 0
+        d.sess.run(d.assign_op)
+        print 'SAVING', filename
         d.saver.save(d.sess, d.save_path)
 
 

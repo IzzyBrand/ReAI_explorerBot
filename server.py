@@ -11,7 +11,8 @@ from DQN import DQN
 app = Flask(__name__)
 
 fpaths = ['good_data/240x160_20fps_60s_0.pkl']
-model = DQN(fpaths, restore_path="model/model.ckpt")
+#model = DQN(fpaths, restore_path="model/model.ckpt")
+model = DQN()
 global_step = 0
 
 @app.route('/request_action', methods=['POST'])
