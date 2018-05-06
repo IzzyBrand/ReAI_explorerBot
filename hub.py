@@ -113,7 +113,7 @@ if __name__ == '__main__':
         if delay > 1e-4: camera.wait_recording(delay)
         # else: print 1./elapsed
         if r_j is not None:
-            print "{} R: {:05.3f}\t A: {:05.3f}\tT: {}\tMotors: {}".format(step_count, float(r_j), a_jp1, elapsed, motors)
+            print "{} R: {}\t A: {:05.3f}\tT: {:05.3f}\tMotors: {}".format(step_count, float(r_j), a_jp1, elapsed, motors)
         step_count += 1
 
     signal_handler(0, 0)
