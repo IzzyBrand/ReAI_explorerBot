@@ -97,13 +97,15 @@ if __name__ == '__main__':
         # and request an action for s_jp1 -> a_jp1
         # we also send back the previous reward to be used in experience replay
         a_jp1 = request_action(h.DQN_URL,  s_jp1, r_j)
+        
         if a_jp1 is not None: driver.act(a_jp1)
         # once we've taken that action, move ahead a timestep
         s_j = s_jp1
         a_j = a_jp1
         tof_j = tof_jp1
-        
+        r_start = time.time()
         batch_update(h.DQN_URL, step_count)
+        print 'Batch time', time.time() - r_start 
 
         # delay to keep the loop frequency constant
         elapsed = time.time() - start
@@ -111,7 +113,7 @@ if __name__ == '__main__':
         if delay > 1e-4: camera.wait_recording(delay)
         # else: print 1./elapsed
         if r_j is not None:
-            print "{} R: {:05.3f}\t A: {}\tT: {}\tMotors: {}".format(step_count, float(r_j), a_jp1, elapsed, motors)
+            print "{} R: {:05.3f}\t A: {:05.3f}\tT: {}\tMotors: {}".format(step_count, float(r_j), a_jp1, elapsed, motors)
         step_count += 1
 
     signal_handler(0, 0)
