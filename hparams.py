@@ -1,6 +1,6 @@
 import numpy as np
 ########### INPUT PARAMS ###########
-FREQUENCY = 10 # loop frequency of the controller
+FREQUENCY = 2 # loop frequency of the controller
 FRAMERATE = 20 # framerate of the camera
 
 HISTORY_LEN = 1

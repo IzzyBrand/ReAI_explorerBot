@@ -77,15 +77,27 @@ if __name__ == '__main__':
     functions_to_call_on_exit.append(("Closing splitter 2", lambda:
         camera.stop_recording(splitter_port=2)))
 
+    ################################ POLICIES ################################
+    def hand_coded_policy(tof_jp1):
+        if (tof_jp1 == 1).all(): return 0
+        elif (tof_jp1[1:3] < 1).all(): return 1
+        elif (tof_jp1[3] < 1): return 2
+        else: return 3
+
+    def random_policy():
+        return np.random.randint(0,4)
+
     ############################## RUN THE TRAP ##############################
     print('Giving all the things a moment to boot up')
     time.sleep(5)
     print('HERE WE GO')
     step_count = 0
+    reward_sum = 0
     a_j = None
     s_j = None
     tof_j = None
-    while not rospy.is_shutdown():
+    loop_start = time.time()
+    while not rospy.is_shutdown() and (time.time() - loop_start < 60):
         start = time.time()
         # we're now in state j+1, called s_jp1
         motors = deepcopy(driver.m)
@@ -97,6 +109,8 @@ if __name__ == '__main__':
         # and request an action for s_jp1 -> a_jp1
         # we also send back the previous reward to be used in experience replay
         a_jp1 = request_action(h.DQN_URL,  s_jp1, r_j)
+        # a_jp1 = random_policy()
+        # a_jp1 = hand_coded_policy(tof_jp1)
         
         if a_jp1 is not None: driver.act(a_jp1)
         # once we've taken that action, move ahead a timestep
@@ -113,7 +127,10 @@ if __name__ == '__main__':
         if delay > 1e-4: camera.wait_recording(delay)
         # else: print 1./elapsed
         if r_j is not None:
+            reward_sum += r_j
+            step_count += 1
             print "{} R: {}\t A: {:05.3f}\tT: {:05.3f}\tMotors: {}".format(step_count, float(r_j), a_jp1, elapsed, motors)
-        step_count += 1
+        
 
+    print float(reward_sum)/float(step_count)
     signal_handler(0, 0)
