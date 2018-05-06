@@ -38,4 +38,4 @@ def get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1):
 
 # gets the motor output for the action
 def action_to_motor(action):
-	return hp.MOTOR_VALS(action)
+	return hp.MOTOR_VALS[action]
