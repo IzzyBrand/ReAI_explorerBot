@@ -12,4 +12,5 @@ logs/
 model/
 50_logs/
 50_model/
-irl/
+model_bak/
+model_bak_10k/
