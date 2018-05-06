@@ -37,7 +37,6 @@ class DQN:
 
         self.loss = self.build_loss()
         self.action_ph, self.action_loss = self.build_action_loss()
-        tf.summary.scalar('action_loss', action_loss)
 
         # Note: changing this to AdamOptimizer breaks the assertion in
         # build assign because the optimizer stores a lot of global
@@ -221,7 +220,7 @@ class DQN:
     def update_target_Q(self):
         self.sess.run(self.assign_op)
 
-    def train_action(self, batch, step):
+    def train_action(self, batch):
         img_js, flow_js, motor_js,  a_js, _ = zip(*batch)
         flow_js = np.stack(flow_js)
         fd = {
@@ -231,12 +230,8 @@ class DQN:
             self.action_ph:  np.eye(hp.ACTION_SPACE_SIZE)[np.array(a_js)]
         }
 
-        
-
-        summary, curr_loss, _ = self.sess.run([self.merged, self.action_loss, self.train_action_op], feed_dict=fd)
-        self.writer.add_summary(summary, step)
-
-        print step, curr_loss
+        curr_loss, _ = self.sess.run([self.action_loss, self.train_action_op], feed_dict=fd)
+        return curr_loss
 
 
 
@@ -267,8 +262,8 @@ if __name__ == '__main__':
     # sys.exit(0)
     d.sess.run(d.assign_op)
     batch = []
-    step = 0
     counter = 0
+    step = 0
     for loop_num in range(100):
         for filename in sys.argv[1:]:
             with open(filename, 'rb') as f:
@@ -279,7 +274,7 @@ if __name__ == '__main__':
                     except:
                         break
                     if counter == hp.BATCH_SIZE:
-                        d.train_action(batch, step)
+                        print step, d.train_action(batch)
                         batch = []
                         counter = 0
                         step += 1
