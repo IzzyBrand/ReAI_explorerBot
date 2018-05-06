@@ -38,7 +38,4 @@ def get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1):
 
 # gets the motor output for the action
 def action_to_motor(action):
-	return np.array((m1_deltas[action], m2_deltas[action]))
-
-def motor_to_action(dm1,dm2):
-	return np.argmax(np.logical_and((m1_deltas == dm1), (m2_deltas == dm2)))
+	return hp.MOTOR_VALS(action)
