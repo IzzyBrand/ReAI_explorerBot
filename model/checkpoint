@@ -1,0 +1,2 @@
+model_checkpoint_path: "fblr_robot_model.ckpt"
+all_model_checkpoint_paths: "fblr_robot_model.ckpt"
