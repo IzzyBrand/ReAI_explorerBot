@@ -254,12 +254,12 @@ make sure that tf.assign isn't making the target variables trainable
 
 if __name__ == '__main__':
     #d = DQN(sys.argv[1:], save_path="model/action_model.ckpt")
-    d = DQN(sys.argv[1:],save_path="model/fblr_model.ckpt")
-    print("Started a DQN")
-    for i in xrange(5001):
-        print d.batch_update(i)
-        if i%100 ==0: d.saver.save(d.sess, d.save_path)
-    sys.exit(0)
+    d = DQN(sys.argv[1:],restore_path="model/fblr_action_model.ckpt", save_path="model/fblr_action_model.ckpt")
+    # print("Started a DQN")
+    # for i in xrange(5001):
+    #     print d.batch_update(i)
+    #     if i%100 ==0: d.saver.save(d.sess, d.save_path)
+    # sys.exit(0)
     d.sess.run(d.assign_op)
     batch = []
     counter = 0
