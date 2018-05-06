@@ -231,7 +231,7 @@ make sure that tf.assign isn't making the target variables trainable
 if __name__ == '__main__':
     d = DQN(sys.argv[1:], save_path="irl/model.ckpt")
     print("Started a DQN")
-    for i in xrange(50000):
+    for i in xrange(20000):
         d.batch_update(i)
         if i % 100 == 0:
             print i
