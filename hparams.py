@@ -26,8 +26,8 @@ MOTOR_VALS = np.array([[ 1.0,  1.0], # F
 ACTION_SPACE_SIZE = MOTOR_VALS.shape[0]
 
 DISCOUNT_FACTOR = 0.95
-LEARNING_RATE = 5e-6 # TODO: May want to decay by using a tf.Variable
-BATCH_SIZE = 500
+LEARNING_RATE = 1e-7 # TODO: May want to decay by using a tf.Variable
+BATCH_SIZE = 100
 MEMORY_SIZE = 5000
 TARGET_Q_UPDATE_INTERVAL = 50
 EPS=0.2
