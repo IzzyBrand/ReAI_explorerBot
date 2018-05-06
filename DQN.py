@@ -13,7 +13,7 @@ import util
 import time
 
 class DQN:
-    def __init__(self, mem_files = [], restore_path = None, save_path = "model/model.ckpt"):
+    def __init__(self, mem_files = [], restore_path = None, save_path = "irl/model.ckpt"):
         self.replay_memory = deque(maxlen=hp.MEMORY_SIZE)
         for f in mem_files: self.add_file_to_memory(f)
         with tf.variable_scope('curr_Q'):
@@ -229,7 +229,7 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    d = DQN(sys.argv[1:], save_path="irl/model.ckpt")
+    d = DQN(sys.argv[1:], save_path="model/model.ckpt")
     print("Started a DQN")
     for i in xrange(50000):
         d.batch_update(i)

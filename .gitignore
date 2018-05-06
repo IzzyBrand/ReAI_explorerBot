@@ -10,3 +10,6 @@ sftp-config.json
 tof_test
 logs/
 model/
+50_logs/
+50_model/
+irl/

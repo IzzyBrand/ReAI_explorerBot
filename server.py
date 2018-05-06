@@ -34,4 +34,5 @@ def batch_update():
     model.batch_update(global_step)
     global_step += 1
     # http 204 no content
+    print "Done updating"
     return ('', 204)
