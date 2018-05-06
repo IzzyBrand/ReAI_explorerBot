@@ -219,6 +219,20 @@ class DQN:
     def update_target_Q(self):
         self.sess.run(self.assign_op)
 
+    def train_action(self, batch):
+        img_js, flow_js, motor_js  a_js, _ = zip(*batch)
+
+        fd = {
+            self.imgC: np.stack(img_js),
+            self.floC: np.stack((flow_js['x'],flow_js['y'], flow_js['sad']), axis=3),
+            self.motC: np.stack(motor_js),
+            self.acton_ph = np.eye(hp.ACTION_SPACE_SIZE)[a_js]
+        }
+
+        curr_loss, _ = self.sess.run([self.action_loss, self.train_action_op], feed_dict=fd)
+        print curr_loss
+
+
 
 """
 with tf.variable_scope('Q')
@@ -238,11 +252,32 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    d = DQN(sys.argv[1:], save_path="model/model.ckpt")
+    d = DQN(sys.argv[1:], save_path="model/action_model.ckpt")
     print("Started a DQN")
-    for i in xrange(20000):
-        d.batch_update(i)
-        if i % 100 == 0:
-            print i
-            d.update_target_Q()
-    d.saver.save(d.sess, d.save_path)
+    # for i in xrange(20000):
+    #     d.batch_update(i)
+    #     if i % 100 == 0:
+    #         print i
+    #         d.update_target_Q()
+    # d.saver.save(d.sess, d.save_path)
+
+    batch = []
+    counter = 0
+    for loop_num in range(10):
+        for filename in sys.argv[1:]:
+            with open(filename, 'rb') as f:
+                while True:
+                    try:
+                        batch.append(pickle.load(f))
+                        counter += 1
+                    except EOFError:
+                        break
+                    if counter == hp.BATCH_SIZE:
+                        d.train_action(batch)
+                        batch = []
+                        counter = []
+        d.saver.save(d.sess, d.save_path)
+
+
+
+
