@@ -18,7 +18,7 @@ class DQN:
         for f in mem_files: self.add_file_to_memory(f)
         with tf.variable_scope('curr_Q'):
             # Gets input placeholders and net outputs for current Q net
-            self.motC, self.tof_C, self.curr_pred = \
+            self.motC, self.tofC, self.curr_pred = \
                     self.build_Q_net(trainable=True)
         with tf.variable_scope('target_Q'):
             # Gets input placeholders and net outputs for target Q net
@@ -124,7 +124,7 @@ class DQN:
             return np.random.randint(hp.ACTION_SPACE_SIZE)
 
         fd = {
-            self.motC: np.expand_dims(motor, axis=0)
+            self.motC: np.expand_dims(motor, axis=0),
             self.tofC: np.expand_dims(tof, axis=0)
         }
         Q_vals = self.sess.run(self.curr_pred, feed_dict=fd)
@@ -179,7 +179,7 @@ class DQN:
             self.motT: motor_jp1s,
             self.tofT: tof_jp1s,
             self.a_j:  np.array(a_js),
-            self.r_j:  np.array(r_js),
+            self.r_j:  np.array(r_js)
         }
 
         summary, curr_loss, _ = self.sess.run([self.merged, self.loss, self.train_op], feed_dict=fd)
@@ -198,6 +198,7 @@ class DQN:
 
     def train_action(self, batch):
         _, _, motor_js,  a_js, tof_js = zip(*batch)
+
         fd = {
             self.motC: np.stack(motor_js),
             self.tofC: np.stack(tof_js),
