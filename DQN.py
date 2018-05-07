@@ -228,7 +228,6 @@ make sure that tf.assign isn't making the target variables trainable
 """
 
 if __name__ == '__main__':
-    #d = DQN(sys.argv[1:], save_path="model/action_model.ckpt")
     d = DQN(sys.argv[1:], save_path="model/tof_model.ckpt")
     print("Started a DQN")
     for i in xrange(10001):
