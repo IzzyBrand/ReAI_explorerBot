@@ -126,7 +126,7 @@ class DQN:
 
         num_mems = hp.HISTORY_LEN - 1
         l = len(self.replay_memory)
-        mems = list(itertools.islice(self.replay_memory, l-num_mems, l)])
+        mems = list(itertools.islice(self.replay_memory, l-num_mems, l))
         s_js, a_js, r_js, s_jp1s = zip(*mems)
         mots, tofs = zip(*s_js)
         mots.append(motor)
