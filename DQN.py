@@ -124,15 +124,22 @@ class DQN:
         if np.random.random() < hp.EPS:
             return np.random.randint(hp.ACTION_SPACE_SIZE)
 
-        num_mems = hp.HISTORY_LEN - 1
-        l = len(self.replay_memory)
-        mems = list(itertools.islice(self.replay_memory, l-num_mems, l))
-        s_js, a_js, r_js, s_jp1s = zip(*mems)
-        mots, tofs = zip(*s_js)
-        mots.append(motor)
-        tofs.append(tof)
-        mots = np.hstack(mots)
-        tofs = np.hstack(tofs)
+        if hp.HISTORY_LEN > 1:
+            num_mems = hp.HISTORY_LEN - 1
+            l = len(self.replay_memory)
+            mems = list(itertools.islice(self.replay_memory, l-num_mems, l))
+            print mems, l, num_mems
+            s_js, a_js, r_js, s_jp1s = zip(*mems)
+            mots, tofs = zip(*s_js)
+            mots = list(mots)
+            tofs = list(tofs)
+            mots.append((motor))
+            tofs.append(tof)
+            mots = np.hstack(mots)
+            tofs = np.hstack(tofs)
+        else:
+            mots = motor
+            tofs = tof
         fd = {
             self.motC: np.expand_dims(mots, axis=0),
             self.tofC: np.expand_dims(tofs, axis=0)

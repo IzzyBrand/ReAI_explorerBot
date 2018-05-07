@@ -3,7 +3,7 @@ import numpy as np
 FREQUENCY = 2 # loop frequency of the controller
 FRAMERATE = 20 # framerate of the camera
 
-HISTORY_LEN = 1
+HISTORY_LEN = 4
 IMG_HEIGHT = 160
 IMG_WIDTH = 240
 IMG_DEPTH = 3 * HISTORY_LEN # 3 color channels, 4 frame history
@@ -26,11 +26,11 @@ MOTOR_VALS = np.array([[ 1.0,  1.0], # F
 ACTION_SPACE_SIZE = MOTOR_VALS.shape[0]
 
 DISCOUNT_FACTOR = 0.99
-LEARNING_RATE = 5e-6 # TODO: May want to decay by using a tf.Variable
-BATCH_SIZE = 200
+LEARNING_RATE = 1e-5 # TODO: May want to decay by using a tf.Variable
+BATCH_SIZE = 100
 MEMORY_SIZE = 5000
-TARGET_Q_UPDATE_INTERVAL = 50
-EPS=0
+TARGET_Q_UPDATE_INTERVAL = 500
+EPS=0.3
 
 ACTION_TRAIN_LR = 3e-4
 
