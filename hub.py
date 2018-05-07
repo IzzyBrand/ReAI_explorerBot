@@ -97,7 +97,7 @@ if __name__ == '__main__':
     s_j = None
     tof_j = None
     loop_start = time.time()
-    while not rospy.is_shutdown() and (time.time() - loop_start < 60):
+    while not rospy.is_shutdown():  # and (time.time() - loop_start < 60):
         start = time.time()
         # we're now in state j+1, called s_jp1
         motors = deepcopy(driver.m)
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         if r_j is not None:
             reward_sum += r_j
             step_count += 1
-            print "{} R: {}\t A: {:05.3f}\tT: {:05.3f}\tMotors: {}".format(step_count, float(r_j), a_jp1, elapsed, motors)
+            print "{} R: {}\t A: {:05.3f}\tT: {:05.3f}".format(step_count, float(r_j), a_jp1, 1./elapsed)
         
 
     print float(reward_sum)/float(step_count)
