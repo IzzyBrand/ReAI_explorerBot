@@ -16,17 +16,17 @@ MOTOR_DIM = 2 * HISTORY_LEN
 SENSOR_DIM = 4 * HISTORY_LEN
 
 ########### OTHER STUFF ###########
-DQN_URL = "http://agni:5000"
+DQN_URL = "http://kalessin:5000"
 
 MOTOR_VALS = np.array([[ 1.0,  1.0], # F
-					   [-0.5, -0.5], # B
-					   [ 1.0,  0.0], # L
-					   [ 0.0,  1.0]])# R
+		       [-0.5, -0.5], # B
+		       [ 1.0,  0.0], # L
+		       [ 0.0,  1.0]])# R
 
 ACTION_SPACE_SIZE = MOTOR_VALS.shape[0]
 
-DISCOUNT_FACTOR = 0.95
-LEARNING_RATE = 1e-5 # TODO: May want to decay by using a tf.Variable
+DISCOUNT_FACTOR = 0.99
+LEARNING_RATE = 5e-6 # TODO: May want to decay by using a tf.Variable
 BATCH_SIZE = 200
 MEMORY_SIZE = 5000
 TARGET_Q_UPDATE_INTERVAL = 50

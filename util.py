@@ -21,7 +21,7 @@ def get_random_mem():
 def motor_reward(motors):
 	#motors = (np.array(motors)-1000)/500.
 	r = np.sum(motors)
-	if r < 0: r = r * 4.
+	if r < 0: r = r * 2.
 	return r
 
 def tof_reward(tof_array):
@@ -29,7 +29,7 @@ def tof_reward(tof_array):
 
 def get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1):
 	motors, _ = s_jp1
-	alpha = 0.75
+	alpha = 0.9
 	return alpha * tof_reward(tof_jp1) + (1.-alpha) * motor_reward(motors)
 
 ###############################################################################
