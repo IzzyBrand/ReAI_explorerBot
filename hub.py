@@ -13,19 +13,19 @@ import util
 import rospy
 from explorer_bot.msg import Lidars
 
-class FrameAnalyzer(picamera.array.PiRGBAnalysis):
-    def setup(self):
-        self.data = None
+# class FrameAnalyzer(picamera.array.PiRGBAnalysis):
+#     def setup(self):
+#         self.data = None
 
-    def analyse(self, array):
-        self.data = array
+#     def analyse(self, array):
+#         self.data = array
 
 
-class FlowAnalyzer(picamera.array.PiMotionAnalysis):
-    def setup(self):
-        self.data = None
-    def analyse(self, array):
-        self.data = array
+# class FlowAnalyzer(picamera.array.PiMotionAnalysis):
+#     def setup(self):
+#         self.data = None
+#     def analyse(self, array):
+#         self.data = array
 
 functions_to_call_on_exit = []
 
@@ -60,22 +60,22 @@ if __name__ == '__main__':
     functions_to_call_on_exit.append(("Closing servod process", driver.close))
 
     ############################# INIT THE CAMERA #############################
-    camera = picamera.PiCamera(framerate=h.FRAMERATE)
-    camera.resolution = (h.IMG_WIDTH, h.IMG_HEIGHT)
-    frame = FrameAnalyzer(camera)
-    flow = FlowAnalyzer(camera)
+    # camera = picamera.PiCamera(framerate=h.FRAMERATE)
+    # camera.resolution = (h.IMG_WIDTH, h.IMG_HEIGHT)
+    # frame = FrameAnalyzer(camera)
+    # flow = FlowAnalyzer(camera)
 
-    frame.setup()
-    flow.setup()
-    camera.start_recording("/dev/null", format='h264',
-        splitter_port=1, motion_output=flow)
-    camera.start_recording(frame, format='rgb',
-        splitter_port=2)
+    # frame.setup()
+    # flow.setup()
+    # camera.start_recording("/dev/null", format='h264',
+    #     splitter_port=1, motion_output=flow)
+    # camera.start_recording(frame, format='rgb',
+    #     splitter_port=2)
 
-    functions_to_call_on_exit.append(("Closing splitter 1", lambda:
-        camera.stop_recording(splitter_port=1)))
-    functions_to_call_on_exit.append(("Closing splitter 2", lambda:
-        camera.stop_recording(splitter_port=2)))
+    # functions_to_call_on_exit.append(("Closing splitter 1", lambda:
+    #     camera.stop_recording(splitter_port=1)))
+    # functions_to_call_on_exit.append(("Closing splitter 2", lambda:
+    #     camera.stop_recording(splitter_port=2)))
 
     ################################ POLICIES ################################
     def hand_coded_policy(tof_jp1):
@@ -101,8 +101,8 @@ if __name__ == '__main__':
         start = time.time()
         # we're now in state j+1, called s_jp1
         motors = deepcopy(driver.m)
-        s_jp1 = (frame.data, flow.data, motors)
         tof_jp1 = deepcopy(tof_array)
+        s_jp1 = (motors, tof_jp1)
         # so we can calculate the reward, (s_j, a_j, s_jp1) -> r_j
         r_j = None if tof_j is None else \
               util.get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1)
@@ -124,7 +124,7 @@ if __name__ == '__main__':
         # delay to keep the loop frequency constant
         elapsed = time.time() - start
         delay = 1./h.FREQUENCY - elapsed
-        if delay > 1e-4: camera.wait_recording(delay)
+        # if delay > 1e-4: camera.wait_recording(delay)
         # else: print 1./elapsed
         if r_j is not None:
             reward_sum += r_j

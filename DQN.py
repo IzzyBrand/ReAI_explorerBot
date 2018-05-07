@@ -18,11 +18,11 @@ class DQN:
         for f in mem_files: self.add_file_to_memory(f)
         with tf.variable_scope('curr_Q'):
             # Gets input placeholders and net outputs for current Q net
-            self.imgC, self.floC, self.motC, self.curr_pred = \
+            self.motC, self.tof_C, self.curr_pred = \
                     self.build_Q_net(trainable=True)
         with tf.variable_scope('target_Q'):
             # Gets input placeholders and net outputs for target Q net
-            self.imgT, self.floT, self.motT, self.target_pred = \
+            self.motT, self.tofT, self.target_pred = \
                     self.build_Q_net(trainable=False)
 
         # Action taken at step J
@@ -100,57 +100,32 @@ class DQN:
         x_ent = tf.nn.softmax_cross_entropy_with_logits(logits=self.curr_pred, labels=action)
         return action, tf.reduce_mean(x_ent)
 
-    def apply_convolution(self, logits, output_depth, filter_size, trainable=None):
-        logits = tf.layers.conv2d(logits, output_depth, filter_size,
-                trainable=trainable)
-        logits = tf.layers.batch_normalization(logits, trainable=trainable)
-        logits = tf.nn.relu(logits)
-        return logits
-
     def build_Q_net(self, trainable=True):
-        img_input = tf.placeholder(tf.float32,
-                [None, hp.IMG_HEIGHT, hp.IMG_WIDTH, hp.IMG_DEPTH])
-        flow_input = tf.placeholder(tf.float32,
-                [None, hp.FLOW_HEIGHT, hp.FLOW_WIDTH, hp.FLOW_DEPTH])
         motor_input = tf.placeholder(tf.float32, [None, hp.MOTOR_DIM])
-
-        img_feat = img_input
-        for _ in xrange(hp.IMG_CONV_LAYERS):
-            img_feat = self.apply_convolution(img_feat, 3, 3, trainable=trainable)
-        img_feat = tf.layers.flatten(img_feat)
-        img_feat = tf.layers.dense(img_feat, 10, trainable=trainable)
-        img_feat = tf.nn.relu(img_feat)
-
-        flow_feat = flow_input
-        for _ in xrange(hp.FLOW_CONV_LAYERS):
-            flow_feat = self.apply_convolution(flow_feat, 3, 3, trainable=trainable)
-        flow_feat = tf.layers.flatten(flow_feat)
-        flow_feat = tf.layers.dense(flow_feat, 10, trainable=trainable)
-        flow_feat = tf.nn.relu(flow_feat)
+        tof_input = tf.placeholder(tf.float32, [None, hp.SENSOR_DIM])
 
         motor_feat = motor_input
-        for _ in xrange(hp.MOTOR_FC_LAYERS):
-            motor_feat = tf.layers.dense(motor_feat, 10, trainable=trainable)
-            motor_feat = tf.nn.relu(motor_feat)
-
-        feat = tf.concat([img_feat, flow_feat, motor_input], axis=1)
-        feat = tf.layers.dense(feat, 30, trainable=trainable)
+        tof_feat = tof_input
+        feat = tf.concat([tof_feat, motor_input], axis=1)
+        feat = tf.layers.dense(feat, 20, trainable=trainable)
+        feat = tf.nn.relu(feat)
+        feat = tf.layers.dense(feat, 6, trainable=trainable)
         feat = tf.nn.relu(feat)
         feat = tf.layers.dense(feat, hp.ACTION_SPACE_SIZE, trainable=trainable)
-        return img_input, flow_input, motor_input, feat
+        
+        return motor_input, tof_input, feat
 
     def init_graph(self):
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(self.assign_op)
 
-    def get_curr_Q_action(self, img, flow, motor):
+    def get_curr_Q_action(self, motor, tof):
         if np.random.random() < hp.EPS:
             return np.random.randint(hp.ACTION_SPACE_SIZE)
 
         fd = {
-            self.imgC: np.expand_dims(img, axis=0),
-            self.floC: np.expand_dims(np.stack((flow['x'],flow['y'], flow['sad']), axis=2), axis=0),
             self.motC: np.expand_dims(motor, axis=0)
+            self.tofC: np.expand_dims(tof, axis=0)
         }
         Q_vals = self.sess.run(self.curr_pred, feed_dict=fd)
         return np.argmax(Q_vals, axis=1)[0]
@@ -170,11 +145,13 @@ class DQN:
                     x_jp1 = pickle.load(f)
                     if x_jp1 is not None and x_j is not None:
                         count += 1
-                        s_j     = x_j[:3]
+                        m_j     = x_j[2]
                         a_j     = x_j[3]
                         tof_j   = x_j[4]
-                        s_jp1   = x_jp1[:3]
+                        m_jp1   = x_jp1[2]
                         tof_jp1 = x_jp1[4]
+                        s_j = (m_j, tof_j)
+                        s_jp1 = (m_jp1, tof_jp1)
                         r_j = util.get_reward(s_j, a_j, s_jp1, tof_j, tof_jp1)
                         self.add_memory((s_j, a_j, r_j, s_jp1))
                 except EOFError:
@@ -191,18 +168,16 @@ class DQN:
         s_js, a_js, r_js, s_jp1s = zip(*mems)
         # Similarly, break the states into their individual components, and
         # create stacked np arrays for network input.
-        img_js, flow_js, motor_js = map(lambda ls:
+        motor_js, tof_js = map(lambda ls:
                 np.stack(ls), zip(*s_js))
-        img_jp1s, flow_jp1s, motor_jp1s = map(lambda ls:
+        motor_jp1s, tof_jp1s = map(lambda ls:
                 np.stack(ls), zip(*s_jp1s))
 
         fd = {
-            self.imgC: img_js,
-            self.floC: np.stack((flow_js['x'],flow_js['y'], flow_js['sad']), axis=3),
             self.motC: motor_js,
-            self.imgT: img_jp1s,
-            self.floT: np.stack((flow_jp1s['x'],flow_jp1s['y'], flow_jp1s['sad']), axis=3),
+            self.tofC: tof_js,
             self.motT: motor_jp1s,
+            self.tofT: tof_jp1s,
             self.a_j:  np.array(a_js),
             self.r_j:  np.array(r_js),
         }
@@ -222,12 +197,10 @@ class DQN:
         self.sess.run(self.assign_op)
 
     def train_action(self, batch):
-        img_js, flow_js, motor_js,  a_js, _ = zip(*batch)
-        flow_js = np.stack(flow_js)
+        _, _, motor_js,  a_js, tof_js = zip(*batch)
         fd = {
-            self.imgC: np.stack(img_js),
-            self.floC: np.stack((flow_js['x'],flow_js['y'], flow_js['sad']), axis=3),
             self.motC: np.stack(motor_js),
+            self.tofC: np.stack(tof_js),
             self.action_ph:  np.eye(hp.ACTION_SPACE_SIZE)[np.array(a_js)]
         }
 
@@ -255,7 +228,7 @@ make sure that tf.assign isn't making the target variables trainable
 
 if __name__ == '__main__':
     #d = DQN(sys.argv[1:], save_path="model/action_model.ckpt")
-    d = DQN(sys.argv[1:],restore_path='model/fblr_model.ckpt', save_path="model/fblr_model.ckpt")
+    d = DQN(sys.argv[1:], save_path="model/tof_model.ckpt")
     print("Started a DQN")
     for i in xrange(10001):
         print d.batch_update(i)
