@@ -112,7 +112,7 @@ class DQN:
         feat = tf.layers.dense(feat, 6, trainable=trainable)
         feat = tf.nn.relu(feat)
         feat = tf.layers.dense(feat, hp.ACTION_SPACE_SIZE, trainable=trainable)
-        
+
         return motor_input, tof_input, feat
 
     def init_graph(self):
@@ -123,9 +123,17 @@ class DQN:
         if np.random.random() < hp.EPS:
             return np.random.randint(hp.ACTION_SPACE_SIZE)
 
+        num_mems = hp.HISTORY_LEN - 1
+        mems = self.replay_memory[-num_mems:]
+        s_js, a_js, r_js, s_jp1s = zip(*mems)
+        mots, tofs = zip(*s_js)
+        mots.append(motor)
+        tofs.append(tof)
+        mots = np.hstack(mots)
+        tofs = np.hstack(tofs)
         fd = {
-            self.motC: np.expand_dims(motor, axis=0),
-            self.tofC: np.expand_dims(tof, axis=0)
+            self.motC: np.expand_dims(mots, axis=0),
+            self.tofC: np.expand_dims(tofs, axis=0)
         }
         Q_vals = self.sess.run(self.curr_pred, feed_dict=fd)
         return np.argmax(Q_vals, axis=1)[0]
