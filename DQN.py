@@ -147,7 +147,7 @@ class DQN:
             x_j = None
             x_jp1 = None
             # each x_j should be a tuple of (frame, flow, motor, action, tof)
-            while True:
+            for i in range(hp.BATCH_SIZE + 10): # while True:
                 try:
                     x_j = x_jp1
                     x_jp1 = pickle.load(f)
@@ -188,7 +188,7 @@ class DQN:
                     np.stack(ls), zip(*s_jp1s))
 
             m_js = np.hstack([m_js, motor_js])
-            m_js = np.hstack([t_js, tof_js])
+            t_js = np.hstack([t_js, tof_js])
             m_jp1s = np.hstack([m_jp1s, motor_jp1s])
             t_jp1s = np.hstack([t_jp1s, tof_jp1s])
 
