@@ -19,10 +19,10 @@ global_step = 0
 @app.route('/request_action', methods=['POST'])
 def request_action():
     state, reward = pickle.loads(request.data)
-    action = model.get_curr_Q_action(*state)
     if reward is not None:
         mem = (model.stored_state, model.stored_action, reward, state)
         model.add_memory(mem)
+    action = model.get_curr_Q_action(*state)
     model.stored_state = state
     model.stored_action = action
 
