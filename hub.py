@@ -40,7 +40,7 @@ def signal_handler(signal, frame):
 tof_array = None
 def tof_callback(data):
     global tof_array
-    tof_array = data.ranges
+    tof_array = np.array(data.ranges)
 
 if __name__ == '__main__':
     ########################## START SIGNAL HANDLER ##########################

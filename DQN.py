@@ -167,25 +167,37 @@ class DQN:
             print 'Added {} memories to memory.'.format(count)
 
     def batch_update(self, global_step):
-        idxs = np.random.choice(len(self.replay_memory),
+        idxs = np.random.choice(np.arange(hp.HISTORY_LEN,len(self.replay_memory)),
                 hp.BATCH_SIZE, replace=False)
         # Get a list of (s_j, a_j, r_j, s_jp1) tuples
-        mems = [self.replay_memory[idx] for idx in idxs]
-        # Break these into coordinatewise lists, noting that zip is its own inverse!
-        # https://stackoverflow.com/questions/19339/transpose-unzip-function-inverse-of-zip
-        s_js, a_js, r_js, s_jp1s = zip(*mems)
-        # Similarly, break the states into their individual components, and
-        # create stacked np arrays for network input.
-        motor_js, tof_js = map(lambda ls:
-                np.stack(ls), zip(*s_js))
-        motor_jp1s, tof_jp1s = map(lambda ls:
-                np.stack(ls), zip(*s_jp1s))
+        
+        m_js = np.zeros([hp.BATCH_SIZE, 0])
+        t_js = np.zeros([hp.BATCH_SIZE, 0])
+        m_jp1s = np.zeros([hp.BATCH_SIZE, 0])
+        t_jp1s = np.zeros([hp.BATCH_SIZE, 0])
+        for hist in xrange(hp.HISTORY_LEN):
+            mems = [self.replay_memory[idx] for idx in (idxs-hist)]
+            # Break these into coordinatewise lists, noting that zip is its own inverse!
+            # https://stackoverflow.com/questions/19339/transpose-unzip-function-inverse-of-zip
+            s_js, a_js, r_js, s_jp1s = zip(*mems)
+            # Similarly, break the states into their individual components, and
+            # create stacked np arrays for network input.
+            motor_js, tof_js = map(lambda ls:
+                    np.stack(ls), zip(*s_js))
+            motor_jp1s, tof_jp1s = map(lambda ls:
+                    np.stack(ls), zip(*s_jp1s))
+
+            m_js = np.hstack([m_js, motor_js])
+            m_js = np.hstack([t_js, tof_js])
+            m_jp1s = np.hstack([m_jp1s, motor_jp1s])
+            t_jp1s = np.hstack([t_jp1s, tof_jp1s])
+
 
         fd = {
-            self.motC: motor_js,
-            self.tofC: tof_js,
-            self.motT: motor_jp1s,
-            self.tofT: tof_jp1s,
+            self.motC: m_js,
+            self.tofC: t_js,
+            self.motT: m_jp1s,
+            self.tofT: t_jp1s,
             self.a_j:  np.array(a_js),
             self.r_j:  np.array(r_js)
         }
