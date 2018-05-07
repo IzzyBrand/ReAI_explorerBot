@@ -1,2 +1,2 @@
-model_checkpoint_path: "tof_model_robot_newreward_3.ckpt"
-all_model_checkpoint_paths: "tof_model_robot_newreward_3.ckpt"
+model_checkpoint_path: "tof_model_robot_newreward_8.ckpt"
+all_model_checkpoint_paths: "tof_model_robot_newreward_8.ckpt"

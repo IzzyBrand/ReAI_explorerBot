@@ -30,7 +30,7 @@ LEARNING_RATE = 5e-6 # TODO: May want to decay by using a tf.Variable
 BATCH_SIZE = 200
 MEMORY_SIZE = 5000
 TARGET_Q_UPDATE_INTERVAL = 50
-EPS=0.2
+EPS=0
 
 ACTION_TRAIN_LR = 3e-4
 

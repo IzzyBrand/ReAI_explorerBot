@@ -128,6 +128,7 @@ class DQN:
             self.tofC: np.expand_dims(tof, axis=0)
         }
         Q_vals = self.sess.run(self.curr_pred, feed_dict=fd)
+        print Q_vals
         return np.argmax(Q_vals, axis=1)[0]
 
     def add_memory(self, mem):
