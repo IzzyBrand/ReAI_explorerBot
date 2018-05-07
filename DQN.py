@@ -148,7 +148,7 @@ class DQN:
             x_j = None
             x_jp1 = None
             # each x_j should be a tuple of (frame, flow, motor, action, tof)
-            for i in range(hp.BATCH_SIZE + 10): # while True:
+            while True:
                 try:
                     x_j = x_jp1
                     x_jp1 = pickle.load(f)

@@ -11,8 +11,7 @@ from DQN import DQN
 app = Flask(__name__)
 
 fpaths = ['camTests/drivingFootage/fblr_240x160_20fps_300s_0.pkl']
-model = DQN(fpaths, restore_path="model/tof_model_robot_newreward_7.ckpt",
-    save_path="model/tof_model_robot_newreward_8.ckpt")
+model = DQN(fpaths, save_path="model/tof_model_robot_newreward_8.ckpt")
 # model = DQN()
 global_step = 0
 
