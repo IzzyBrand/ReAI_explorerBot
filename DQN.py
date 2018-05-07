@@ -8,6 +8,7 @@ import sys
 import cPickle as pickle
 
 from collections import deque
+import itertools
 
 import util
 import time
@@ -124,7 +125,8 @@ class DQN:
             return np.random.randint(hp.ACTION_SPACE_SIZE)
 
         num_mems = hp.HISTORY_LEN - 1
-        mems = self.replay_memory[-num_mems:]
+        l = len(self.replay_memory)
+        mems = list(itertools.islice(self.replay_memory, l-num_mems, l)])
         s_js, a_js, r_js, s_jp1s = zip(*mems)
         mots, tofs = zip(*s_js)
         mots.append(motor)
